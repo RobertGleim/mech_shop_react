@@ -5,9 +5,9 @@ import './HomeView.css'
 const HomeView = () => {
   return (
     <div className="home-container">
-      <section className="hero-section">
+      <section className="hero">
         <h1>Welcome to Cool X3 Mechanics</h1>
-        <p className="hero-subtitle">Your trusted partner for premium automotive services</p>
+        <p className="subtitle">Your trusted partner for premium automotive services</p>
         <div className="buttons">
           <NavLink to="/browse" className="browse">Browse Services</NavLink>
           <NavLink to="/contact" className="contact">Contact Us</NavLink>

@@ -1,0 +1,34 @@
+
+/* color Theme
+Background	#121212	Deep black for a dramatic, modern canvas
+Primary Text	#F5F5F5	Soft white for high contrast and readability
+Secondary Text	#B0B0B0	Muted gray for subtitles, metadata, or helper text
+Accent Color	#2C2C2C	Charcoal gray for cards, buttons, or overlays
+Borders/Lines	#3D3D3D	Subtle dividers that maintain the sleek aesthetic
+Hover Effects	#1F1F1F	Slightly lighter black for interactive elements
+Disabled Elements	#666666	Medium gray to indicate inactive states
+Call-to-Action (CTA)	#FFFFFF (text on #2C2C2C)	High-impact buttons and links
+*/ */
+
+
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #121212;
+    color: #F5F5F5;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+    background-color: #121212;
+    min-height: 100vh;
+}

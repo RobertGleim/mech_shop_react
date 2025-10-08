@@ -1,8 +1,118 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { NavLink } from 'react-router-dom'
+import './LoginView.css'
 
-const LoginView = () => {
+function LoginView() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [userType, setUserType] = useState('customer')
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+    setLoading(true)
+
+    const loginData = {
+      email: email,
+      password: password
+    }
+
+    const endpoint = userType === 'customer' 
+      ? 'https://mech-shop-api.onrender.com/api/customers/login'
+      : 'https://mech-shop-api.onrender.com/api/mechanics/login'
+
+    fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(loginData)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.access_token) {
+        setSuccess('Login successful!')
+        localStorage.setItem('token', data.access_token)
+        localStorage.setItem('userType', userType)
+      } else {
+        setError('Login failed')
+      }
+      setLoading(false)
+    })
+    .catch(() => {
+      setError('Connection error')
+      setLoading(false)
+    })
+  }
+
   return (
-    <div>LoginView</div>
+    <div className="login-container">
+      <div className="login-wrapper">
+        <div className="login-card">
+          <div className="login-header">
+            <h1>Welcome Back</h1>
+            <h2>Sign in to your account</h2>
+          </div>
+
+          <form onSubmit={handleSubmit} className="login-form">
+            {error && <div className="alert alert-error">{error}</div>}
+            {success && <div className="alert alert-success">{success}</div>}
+
+            <div className="user-type-switch">
+              <button 
+                type="button"
+                className={`switch-btn ${userType === 'customer' ? 'active' : ''}`}
+                onClick={() => setUserType('customer')}
+              >
+                Customer
+              </button>
+              <button 
+                type="button"
+                className={`switch-btn ${userType === 'mechanic' ? 'active' : ''}`}
+                onClick={() => setUserType('mechanic')}
+              >
+                Mechanic
+              </button>
+            </div>
+
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+              />
+            </div>
+
+            <button type="submit" className="login-btn" disabled={loading}>
+              {loading ? 'Signing In...' : `Sign In as ${userType === 'customer' ? 'Customer' : 'Mechanic'}`}
+            </button>
+          </form>
+
+          <div className="login-footer">
+            <p>Don't have an account? <NavLink to="/register">Sign up here</NavLink></p>
+            <NavLink to="/forgot-password">Forgot your password?</NavLink>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 

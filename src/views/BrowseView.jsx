@@ -39,7 +39,7 @@ const BrowseView = () => {
         <article className="card reverse">
           <div className="card-image">
             <img 
-              src={getImageSrc('card2', 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=800&h=600&fit=crop&crop=center')} 
+              src={getImageSrc('card2', '/Car.jpg')} 
               alt="Tools and wrench"
               onError={() => handleImageError('card2')}
               loading="lazy"
@@ -56,7 +56,7 @@ const BrowseView = () => {
         <article className="card">
           <div className="card-image">
             <img 
-              src={getImageSrc('card3', 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&h=600&fit=crop&crop=center')} 
+              src={getImageSrc('card3', '/Engine.jpg')} 
               alt="Engine repair"
               onError={() => handleImageError('card3')}
               loading="lazy"
@@ -73,7 +73,7 @@ const BrowseView = () => {
         <article className="card reverse">
           <div className="card-image">
             <img 
-              src={getImageSrc('card4', 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop&crop=center')} 
+              src={getImageSrc('card4', '/Brakes.jpg')} 
               alt="Brake service"
               onError={() => handleImageError('card4')}
               loading="lazy"
@@ -90,7 +90,7 @@ const BrowseView = () => {
         <article className="card">
           <div className="card-image">
             <img 
-              src={getImageSrc('card5', 'https://images.unsplash.com/photo-1609964692698-e5bc8edbc941?w=800&h=600&fit=crop&crop=center')} 
+              src={getImageSrc('card5', '/Battery.jpg')} 
               alt="Car battery"
               onError={() => handleImageError('card5')}
               loading="lazy"
@@ -107,7 +107,7 @@ const BrowseView = () => {
         <article className="card reverse">
           <div className="card-image">
             <img 
-              src={getImageSrc('card6', 'https://images.unsplash.com/photo-1615906655593-ad0386982805?w=800&h=600&fit=crop&crop=center')} 
+              src={getImageSrc('card6', '/Ac.jpg')} 
               alt="AC service"
               onError={() => handleImageError('card6')}
               loading="lazy"

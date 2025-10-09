@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import './LoginView.css'
 
 function LoginView() {
+  // Make variables for form data
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -11,12 +12,23 @@ function LoginView() {
   const [userType, setUserType] = useState('customer')
   const navigate = useNavigate()
 
+  // Function that runs when form is submitted
   function handleSubmit(e) {
+    // Stop the page from refreshing
     e.preventDefault()
+    
     setError('')
     setSuccess('')
     setLoading(true)
 
+    // Check if form is filled
+    if (email === "" || password === "") {
+      setError("Please fill all fields")
+      setLoading(false)
+      return
+    }
+    
+    // Try to log in
     const loginData = {
       email: email,
       password: password
@@ -36,14 +48,17 @@ function LoginView() {
     .then(response => response.json())
     .then(data => {
       if (data.token) {
-        setSuccess('Login successful!')
+        // Save login info
         localStorage.setItem('token', data.token)
         localStorage.setItem('userType', userType)
         
-        // Dispatch event to notify NavBar component
+        // Tell other components we logged in
         window.dispatchEvent(new Event('login-status-change'))
         
-        // Redirect based on user type
+        // Show success message
+        setSuccess('Login successful!')
+        
+        // Go to profile page
         if (userType === 'customer') {
           navigate('/customer')
         } else {

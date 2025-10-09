@@ -55,7 +55,11 @@ function NavBar() {
         <ul>
           <li><NavLink to="/">Home</NavLink></li>
           <li><NavLink to="/browse">Services</NavLink></li>
-          <li><NavLink to="/contact">Contact</NavLink></li>
+          
+          {/* Only show Contact link if NOT a mechanic */}
+          {(userType !== 'mechanic') && (
+            <li><NavLink to="/contact">Contact</NavLink></li>
+          )}
           
           {/* Show appropriate profile link based on user type */}
           {isLoggedIn && userType === 'mechanic' && (

@@ -2,53 +2,63 @@ import React, { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import './ContactView.css'
 
-function ContactView() {
+// Arrow function component
+const ContactView = () => {
+  // Get data passed from other pages
   const location = useLocation();
   const customerData = location.state?.customerData || null;
   
-  // Initialize state with customer data if available
+  // Create state variables for form fields
   const [name, setName] = useState(customerData?.name || '')
   const [email, setEmail] = useState(customerData?.email || '')
   const [phone, setPhone] = useState(customerData?.phone || '')
   const [message, setMessage] = useState('')
   const [service, setService] = useState('oil_change')
   const [preferredDate, setPreferredDate] = useState('')
+  
+  // Create state variables for form status
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
   
-  // Set form field values when customerData changes
+  // This runs when customerData changes
   useEffect(() => {
     if (customerData) {
+      // Fill in form with customer data
       setName(customerData.name || '')
       setEmail(customerData.email || '')
       setPhone(customerData.phone || '')
       
-      // If customer is logged in, set a default message
+      // Add default message for logged in users
       if (customerData.isLoggedInCustomer) {
         setMessage('I would like to schedule the following service:')
       }
     }
   }, [customerData])
   
+  // Function that runs when form is submitted
   const handleSubmit = (e) => {
+    // Prevent page refresh
     e.preventDefault()
+    
+    // Show loading state
     setLoading(true)
     setError('')
     
-    // Form validation
+    // Check if required fields are filled
     if (!name || !email || !phone || !message) {
       setError('All fields are required')
       setLoading(false)
       return
     }
     
-    // In a real app, you would submit this data to your backend
+    // This simulates sending data to a server
     setTimeout(() => {
+      // Show success message
       setSuccess(true)
       setLoading(false)
       
-      // Reset form after successful submission
+      // Clear form fields
       if (!customerData) {
         setName('')
         setEmail('')
@@ -60,6 +70,7 @@ function ContactView() {
     }, 1000)
   }
   
+  // Return the component UI
   return (
     <div className="contact-container">
       <div className="contact-wrapper">
@@ -68,6 +79,7 @@ function ContactView() {
           <h2>{customerData ? 'Schedule Your Service' : 'Get in touch with our team'}</h2>
         </div>
         
+        {/* Show success message or form based on submission status */}
         {success ? (
           <div className="success-message">
             <h3>Thank you for contacting us!</h3>
@@ -76,8 +88,10 @@ function ContactView() {
         ) : (
           <div className="contact-card">
             <form onSubmit={handleSubmit} className="contact-form">
+              {/* Show error message if there is one */}
               {error && <div className="error-message">{error}</div>}
               
+              {/* Name field */}
               <div className="form-group">
                 <label>Your Name</label>
                 <input 
@@ -91,6 +105,7 @@ function ContactView() {
                 {customerData?.isLoggedInCustomer && <small>Auto-filled from your profile</small>}
               </div>
               
+              {/* Email field */}
               <div className="form-group">
                 <label>Email Address</label>
                 <input 
@@ -104,6 +119,7 @@ function ContactView() {
                 {customerData?.isLoggedInCustomer && <small>Auto-filled from your profile</small>}
               </div>
               
+              {/* Phone field */}
               <div className="form-group">
                 <label>Phone Number</label>
                 <input 
@@ -117,6 +133,7 @@ function ContactView() {
                 {customerData?.isLoggedInCustomer && <small>Auto-filled from your profile</small>}
               </div>
               
+              {/* Service dropdown */}
               <div className="form-group">
                 <label>Service Type</label>
                 <select 
@@ -133,6 +150,7 @@ function ContactView() {
                 </select>
               </div>
               
+              {/* Date picker */}
               <div className="form-group">
                 <label>Preferred Date</label>
                 <input 
@@ -143,6 +161,7 @@ function ContactView() {
                 />
               </div>
               
+              {/* Message text area */}
               <div className="form-group">
                 <label>Message</label>
                 <textarea 
@@ -154,6 +173,7 @@ function ContactView() {
                 ></textarea>
               </div>
               
+              {/* Submit button */}
               <button type="submit" className="contact-btn" disabled={loading}>
                 {loading ? 'Sending...' : customerData ? 'Schedule Service' : 'Send Message'}
               </button>

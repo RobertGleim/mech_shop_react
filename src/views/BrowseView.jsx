@@ -1,24 +1,33 @@
 import React, { useState } from 'react'
 import './BrowseView.css'
 
+// Arrow function component
 const BrowseView = () => {
+  // State to track which images failed to load
   const [imageErrors, setImageErrors] = useState({});
 
+  // Function that runs when an image fails to load
   const handleImageError = (cardId) => {
-    setImageErrors(prev => ({...prev, [cardId]: true}));
+    // Update state to mark this image as failed
+    setImageErrors({...imageErrors, [cardId]: true});
   };
 
+  // Function to get the correct image source
   const getImageSrc = (cardId, originalSrc) => {
+    // If this image had an error, show placeholder instead
     if (imageErrors[cardId]) {
-      return `https://via.placeholder.com/800x600/2C2C2C/F5F5F5?text=Service+Image`;
+      return "https://via.placeholder.com/800x600/2C2C2C/F5F5F5?text=Service+Image";
     }
+    // Otherwise show the original image
     return originalSrc;
   };
+
+  // Main component render
   return (
     <div className="browse-container">
       <div className="wrap">
         
-        {/* Card 1: image left */}
+        {/* Card 1: Diagnostics */}
         <article className="card">
           <div className="card-image">
             <img 
@@ -35,7 +44,7 @@ const BrowseView = () => {
           </div>
         </article>
 
-        {/* Card 2: image right (reverse) */}
+        {/* Card 2: Maintenance */}
         <article className="card reverse">
           <div className="card-image">
             <img 
@@ -52,7 +61,7 @@ const BrowseView = () => {
           </div>
         </article>
 
-        {/* Card 3: image left */}
+        {/* Card 3: Repair */}
         <article className="card">
           <div className="card-image">
             <img 
@@ -69,7 +78,7 @@ const BrowseView = () => {
           </div>
         </article>
 
-        {/* Card 4: image right (reverse) */}
+        {/* Card 4: Safety */}
         <article className="card reverse">
           <div className="card-image">
             <img 
@@ -86,7 +95,7 @@ const BrowseView = () => {
           </div>
         </article>
 
-        {/* Card 5: image left */}
+        {/* Card 5: Electrical */}
         <article className="card">
           <div className="card-image">
             <img 
@@ -103,7 +112,7 @@ const BrowseView = () => {
           </div>
         </article>
 
-        {/* Card 6: image right (reverse) */}
+        {/* Card 6: Comfort */}
         <article className="card reverse">
           <div className="card-image">
             <img 
@@ -119,7 +128,6 @@ const BrowseView = () => {
             <p>Full climate system inspection: refrigerant service, compressor checks, heater core and blower repairs — comfortable drives guaranteed.</p>
           </div>
         </article>
-
       </div>
     </div>
   )

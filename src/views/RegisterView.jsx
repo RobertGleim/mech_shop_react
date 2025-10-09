@@ -14,12 +14,59 @@ function RegisterView() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [userType, setUserType] = useState('customer')
+  const [checkingEmail, setCheckingEmail] = useState(false)
 
-  function handleSubmit(e) {
+  // Check if email exists before form submission
+  const checkEmail = async () => {
+    if (!email || checkingEmail) return;
+    
+    setCheckingEmail(true);
+    
+    try {
+      // Try to login with the email to see if it exists
+      // This is a workaround since there's no dedicated "check email" endpoint
+      const response = await fetch(`https://mech-shop-api.onrender.com/customers/email-check/${email}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.exists) {
+        setError(`Email ${email} is already registered. Please use a different email or login.`);
+        return true;
+      }
+      return false;
+    } catch {
+      // If the endpoint doesn't exist, we'll continue with registration
+      console.log("Email check failed, continuing with registration");
+      return false;
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
+
+  // Add email validation on blur
+  const handleEmailBlur = async () => {
+    if (email) {
+      await checkEmail();
+    }
+  };
+
+  async function handleSubmit(e) {
     e.preventDefault()
     setError('')
     setSuccess('')
     setLoading(true)
+
+    // First check if email exists
+    const emailExists = await checkEmail();
+    if (emailExists) {
+      setLoading(false);
+      return;
+    }
 
     const userData = {
       first_name: firstName,
@@ -29,7 +76,6 @@ function RegisterView() {
       password: password
     }
 
-    // Add fields based on user type
     if (userType === 'customer') {
       userData.phone = phone
     } else {
@@ -47,26 +93,52 @@ function RegisterView() {
       },
       body: JSON.stringify(userData)
     })
-    .then(response => response.json())
-    .then(data => {
-      if (data.message || data.id) {
-        setSuccess('Account created! You can now login.')
-        setFirstName('')
-        setLastName('')
-        setEmail('')
-        setPhone('')
-        setAddress('')
-        setPassword('')
-        setSalary('')
-      } else {
-        setError('Registration failed')
+    .then(response => {
+      console.log('Response status:', response.status)
+      
+      if (!response.ok) {
+        if (response.status === 409 || response.status === 500) {
+          // 409 Conflict or 500 with existing email
+          throw new Error(`Email ${email} is already registered. Please use a different email or login.`);
+        }
+        
+        return response.json().then(errorData => {
+          throw new Error(errorData.message || 'Registration failed');
+        }).catch(err => {
+          if (err.message.includes('JSON')) {
+            throw new Error(`Server error: ${response.statusText}`);
+          }
+          throw err;
+        });
       }
-      setLoading(false)
+      return response.json();
     })
-    .catch(() => {
-      setError('Connection error')
-      setLoading(false)
+    .then(() => {
+      setSuccess('Account created! You can now login.');
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+      setPhone('');
+      setAddress('');
+      setPassword('');
+      setSalary('');
+      setLoading(false);
     })
+    .catch(error => {
+      console.error('Registration error:', error);
+      
+      // Check if error message contains hints about duplicate email
+      if (error.message.toLowerCase().includes('email') || 
+          error.message.toLowerCase().includes('exists') ||
+          error.message.toLowerCase().includes('duplicate') ||
+          error.message.toLowerCase().includes('already')) {
+        setError(`This email address is already registered. Please use a different email or login.`);
+      } else {
+        setError(error.message || 'Registration failed. Please try again.');
+      }
+      
+      setLoading(false);
+    });
   }
 
   return (
@@ -128,6 +200,7 @@ function RegisterView() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
+                onBlur={handleEmailBlur}
                 placeholder="Email address"
                 required
               />
@@ -181,8 +254,14 @@ function RegisterView() {
               />
             </div>
 
-            <button type="submit" className="register-btn" disabled={loading}>
-              {loading ? 'Creating...' : `Create ${userType === 'customer' ? 'Customer' : 'Mechanic'} Account`}
+            <button 
+              type="submit" 
+              className="register-btn" 
+              disabled={loading || checkingEmail}
+            >
+              {loading ? 'Creating...' : 
+               checkingEmail ? 'Checking email...' :
+               `Create ${userType === 'customer' ? 'Customer' : 'Mechanic'} Account`}
             </button>
           </form>
 

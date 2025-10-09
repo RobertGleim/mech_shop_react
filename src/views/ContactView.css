@@ -82,6 +82,20 @@
   color: #666666;
 }
 
+.autofilled {
+  background-color: rgba(160, 216, 248, 0.1);
+  border-color: #a0d8f8;
+  color: #F5F5F5;
+}
+
+.form-group small {
+  color: #a0d8f8;
+  font-size: 12px;
+  display: block;
+  margin-top: 4px;
+}
+
+
 button {
   width: 100%;
   padding: 16px;

@@ -1,0 +1,277 @@
+.mechanic-container {
+  min-height: 100vh;
+  background-color: #121212;
+  color: white;
+  padding: 40px 20px;
+}
+
+.mechanic-wrapper {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.mechanic-wrapper h1 {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  color: #a0d8f8;
+}
+
+.mechanic-wrapper h2 {
+  font-size: 1.2rem;
+  color: #B0B0B0;
+  margin-bottom: 20px;
+}
+
+.tab-navigation {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+  gap: 10px;
+}
+
+.tab-button {
+  padding: 12px 24px;
+  background-color: #2C2C2C;
+  color: white;
+  border: 2px solid #3D3D3D;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.tab-button:hover {
+  border-color: #a0d8f8;
+}
+
+.tab-button.active {
+  background-color: #3D3D3D;
+  border-color: #a0d8f8;
+  color: #a0d8f8;
+}
+
+.mechanic-card {
+  background-color: #2C2C2C;
+  border-radius: 16px;
+  padding: 32px;
+  border: 1px solid #3D3D3D;
+  text-align: left;
+}
+
+.mechanic-card h3 {
+  color: white;
+  margin-bottom: 24px;
+  font-size: 1.5rem;
+}
+
+.info-section {
+  margin-bottom: 30px;
+}
+
+.info-section p {
+  margin-bottom: 16px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.info-section strong {
+  color: #a0d8f8;
+}
+
+.buttons-section {
+  margin-top: 20px;
+}
+
+.mechanic-btn {
+  padding: 12px 24px;
+  background-color: #3D3D3D;
+  color: white;
+  border: 2px solid #3D3D3D;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.mechanic-btn:hover {
+  border-color: #a0d8f8;
+}
+
+.update-form {
+  margin-top: 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #a0d8f8;
+  font-weight: bold;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  background-color: #121212;
+  border: 2px solid #3D3D3D;
+  border-radius: 8px;
+  color: white;
+  font-size: 16px;
+}
+
+.disabled-input {
+  background-color: #1A1A1A !important;
+  opacity: 0.6;
+}
+
+.form-group small {
+  color: #999;
+  font-size: 12px;
+  margin-top: 5px;
+  display: block;
+}
+
+.form-buttons {
+  margin-top: 20px;
+}
+
+.success-message {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #86efac;
+  border: 1px solid #22c55e;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.error-message {
+  background-color: rgba(220, 38, 38, 0.1);
+  color: #fca5a5;
+  border: 1px solid #dc2626;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.jobs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.job-item {
+  background-color: #1F1F1F;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 15px;
+}
+
+.job-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.job-status {
+  background-color: #3D3D3D;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+.job-details p {
+  margin-bottom: 10px;
+}
+
+.job-actions {
+  margin-top: 15px;
+}
+
+.job-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.start-btn {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+}
+
+.complete-btn {
+  background-color: #10b981;
+  color: white;
+  border: none;
+}
+
+.job-completed-message {
+  color: #10b981;
+  font-style: italic;
+}
+
+.loading-jobs,
+.no-jobs {
+  text-align: center;
+  padding: 40px 0;
+  color: #B0B0B0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .mechanic-container {
+    padding: 20px 15px;
+  }
+  
+  .mechanic-card {
+    padding: 24px;
+  }
+  
+  .buttons-section,
+  .form-buttons {
+    flex-direction: column;
+  }
+  
+  .mechanic-btn,
+  .form-buttons button {
+    width: 100%;
+  }
+  
+  .tab-navigation {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .tab-button {
+    width: 100%;
+  }
+  
+  .job-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .job-actions {
+    justify-content: center;
+    margin-top: 15px;
+  }
+}
+
+/* For phones */
+@media (max-width: 600px) {
+  .mechanic-card {
+    padding: 20px;
+  }
+  
+  .mechanic-btn {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}

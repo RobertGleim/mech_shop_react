@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import './LoginView.css'
 
 function LoginView() {
@@ -9,6 +9,7 @@ function LoginView() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [userType, setUserType] = useState('customer')
+  const navigate = useNavigate()
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -38,13 +39,22 @@ function LoginView() {
         setSuccess('Login successful!')
         localStorage.setItem('token', data.token)
         localStorage.setItem('userType', userType)
+        
+        // Dispatch event to notify NavBar component
+        window.dispatchEvent(new Event('login-status-change'))
+        
+        // Redirect based on user type
+        if (userType === 'customer') {
+          navigate('/customer')
+        } else {
+          navigate('/mechanic')
+        }
       } else {
         setError('Login failed - invalid credentials')
       }
       setLoading(false)
     })
-    .catch(error => {
-      console.error('Fetch error:', error)
+    .catch(() => {
       setError('Connection error')
       setLoading(false)
     })

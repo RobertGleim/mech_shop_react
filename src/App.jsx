@@ -5,6 +5,8 @@ import LoginView from "./views/LoginView"
 import RegisterView from "./views/RegisterView"
 import BrowseView from "./views/BrowseView"
 import ContactView from "./views/ContactView"
+import CustomerView from "./views/CustomerView"
+import MechanicsView from "./views/MechanicsView"
 
 function App() {
   
@@ -18,6 +20,8 @@ function App() {
         <Route path="/Register" element={<RegisterView />} />
         <Route path="/Browse" element={<BrowseView />} />
         <Route path="/Contact" element={<ContactView />} />
+        <Route path="/Customer" element={<CustomerView />} />
+        <Route path="/Mechanic" element={<MechanicsView />} />
       </Routes>
     </BrowserRouter>
   )

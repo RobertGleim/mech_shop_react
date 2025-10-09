@@ -22,8 +22,8 @@ function LoginView() {
     }
 
     const endpoint = userType === 'customer' 
-      ? 'https://mech-shop-api.onrender.com/api/customers/login'
-      : 'https://mech-shop-api.onrender.com/api/mechanics/login'
+      ? 'https://mech-shop-api.onrender.com/customers/login'
+      : 'https://mech-shop-api.onrender.com/mechanics/login'
 
     fetch(endpoint, {
       method: 'POST',
@@ -34,16 +34,17 @@ function LoginView() {
     })
     .then(response => response.json())
     .then(data => {
-      if (data.access_token) {
+      if (data.token) {
         setSuccess('Login successful!')
-        localStorage.setItem('token', data.access_token)
+        localStorage.setItem('token', data.token)
         localStorage.setItem('userType', userType)
       } else {
-        setError('Login failed')
+        setError('Login failed - invalid credentials')
       }
       setLoading(false)
     })
-    .catch(() => {
+    .catch(error => {
+      console.error('Fetch error:', error)
       setError('Connection error')
       setLoading(false)
     })

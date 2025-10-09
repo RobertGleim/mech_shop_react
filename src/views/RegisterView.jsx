@@ -37,8 +37,8 @@ function RegisterView() {
     }
 
     const endpoint = userType === 'customer' 
-      ? 'https://mech-shop-api.onrender.com/api/customers'
-      : 'https://mech-shop-api.onrender.com/api/mechanics'
+      ? 'https://mech-shop-api.onrender.com/customers'
+      : 'https://mech-shop-api.onrender.com/mechanics'
 
     fetch(endpoint, {
       method: 'POST',

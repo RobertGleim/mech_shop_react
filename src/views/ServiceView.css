@@ -1,0 +1,45 @@
+/* Reuse HomeView dark theme classes; add small form tweaks for service view */
+
+.service-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.service-form .form-row label {
+  display: block;
+  margin-bottom: 6px;
+  color: #dcdcdc;
+  font-weight: 600;
+}
+
+.service-form input[type="text"],
+.service-form input[type="number"],
+.service-form input[type="date"],
+.service-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #3d3d3d;
+  background-color: #1f1f1f;
+  color: #f5f5f5;
+  resize: vertical;
+}
+
+.service-form textarea {
+  min-height: 90px;
+}
+
+.service-form input:focus,
+.service-form textarea:focus {
+  outline: none;
+  box-shadow: 0 4px 12px rgba(69, 121, 151, 0.12);
+  border-color: #457997;
+}
+
+/* Small responsive tweaks */
+@media (max-width: 768px) {
+  .service-form .form-row {
+    width: 100%;
+  }
+}

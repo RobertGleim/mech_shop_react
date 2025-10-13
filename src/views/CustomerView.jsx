@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom' // Add this import
 import './CustomerView.css'
+import { apiUrl } from '../lib/api'
 
 function CustomerView() {
   const navigate = useNavigate(); // Add this hook
@@ -21,8 +22,8 @@ function CustomerView() {
       return
     }
 
-    // Fetch customer data from API - using correct endpoint
-    fetch('https://mech-shop-api.onrender.com/customers/profile', {
+    // Fetch customer data from API
+  fetch(apiUrl('/customers/profile'), {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -80,8 +81,8 @@ function CustomerView() {
 
     const token = localStorage.getItem('token')
     
-    // Send update request to API - using correct endpoint
-    fetch('https://mech-shop-api.onrender.com/customers/update', {
+  // Send update request to API
+  fetch(apiUrl('/customers/update'), {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

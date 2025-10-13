@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import './LoginView.css'
+import { apiUrl } from '../lib/api'
 
 function LoginView() {
   // Make variables for form data
@@ -34,9 +35,9 @@ function LoginView() {
       password: password
     }
 
-    const endpoint = userType === 'customer' 
-      ? 'https://mech-shop-api.onrender.com/customers/login'
-      : 'https://mech-shop-api.onrender.com/mechanics/login'
+      const endpoint = userType === 'customer'
+        ? apiUrl('/customers/login')
+        : apiUrl('/mechanics/login')
 
     fetch(endpoint, {
       method: 'POST',
@@ -51,18 +52,40 @@ function LoginView() {
         // Save login info
         localStorage.setItem('token', data.token)
         localStorage.setItem('userType', userType)
-        
+
         // Tell other components we logged in
         window.dispatchEvent(new Event('login-status-change'))
-        
+
         // Show success message
         setSuccess('Login successful!')
-        
-        // Go to profile page
-        if (userType === 'customer') {
-          navigate('/customer')
+
+        // If mechanic, fetch profile to check admin flag and redirect accordingly
+        if (userType === 'mechanic') {
+            fetch(apiUrl('/mechanics/profile'), {
+            headers: {
+              'Authorization': `Bearer ${data.token}`
+            }
+          })
+          .then(res => res.ok ? res.json() : Promise.reject('Failed to fetch profile'))
+          .then(profile => {
+            const isAdmin = profile?.is_admin || profile?.isAdmin || false
+            // persist admin flag for NavBar and other components
+            if (isAdmin) {
+              localStorage.setItem('isAdmin', 'true')
+              navigate('/admin')
+            } else {
+              localStorage.removeItem('isAdmin')
+              navigate('/mechanic')
+            }
+          })
+          .catch(() => {
+            // If profile fetch fails for any reason, fall back to mechanic dashboard
+            localStorage.removeItem('isAdmin')
+            navigate('/mechanic')
+          })
         } else {
-          navigate('/mechanic')
+          // Customer goes to customer dashboard
+          navigate('/customer')
         }
       } else {
         setError('Login failed - invalid credentials')

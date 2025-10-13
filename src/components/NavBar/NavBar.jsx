@@ -6,6 +6,7 @@ import logo from '../../assets/logo.png' // Adjust path if needed
 function NavBar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userType, setUserType] = useState(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   
   // Check login status when component mounts and when localStorage changes
   useEffect(() => {
@@ -13,8 +14,10 @@ function NavBar() {
     function checkLoginStatus() {
       const token = localStorage.getItem('token')
       const type = localStorage.getItem('userType')
+      const adminFlag = localStorage.getItem('isAdmin') === 'true'
       setIsLoggedIn(!!token) // Convert to boolean
       setUserType(type)
+      setIsAdmin(adminFlag)
     }
     
     // Check immediately on mount
@@ -34,6 +37,7 @@ function NavBar() {
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('userType')
+      localStorage.removeItem('isAdmin')
     setIsLoggedIn(false)
     
     // Dispatch event to notify other components
@@ -64,6 +68,9 @@ function NavBar() {
           {/* Show appropriate profile link based on user type */}
           {isLoggedIn && userType === 'mechanic' && (
             <li><NavLink to="/mechanic">Profile</NavLink></li>
+          )}
+          {isAdmin && (
+            <li><NavLink to="/admin">Admin</NavLink></li>
           )}
           {isLoggedIn && userType === 'customer' && (
             <li><NavLink to="/customer">Profile</NavLink></li>

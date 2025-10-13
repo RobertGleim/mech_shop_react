@@ -7,6 +7,7 @@ import BrowseView from "./views/BrowseView"
 import ContactView from "./views/ContactView"
 import CustomerView from "./views/CustomerView"
 import MechanicsView from "./views/MechanicsView"
+import AdminView from "./views/AdminView"
 
 function App() {
   
@@ -22,6 +23,7 @@ function App() {
         <Route path="/Contact" element={<ContactView />} />
         <Route path="/Customer" element={<CustomerView />} />
         <Route path="/Mechanic" element={<MechanicsView />} />
+        <Route path="/Admin" element={<AdminView />} />
       </Routes>
     </BrowserRouter>
   )

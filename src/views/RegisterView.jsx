@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import './RegisterView.css'
+import { apiUrl } from '../lib/api'
 
 function RegisterView() {
   // Form state
@@ -8,7 +9,9 @@ function RegisterView() {
     lastName: '',
     email: '',
     password: '',
-    userType: 'customer'
+    userType: 'customer',
+    salary: '',
+    address: ''
   })
   const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -35,30 +38,44 @@ function RegisterView() {
     setIsLoading(true)
     
     try {
-      const response = await fetch('http://localhost:5000/register', {
+      const endpoint = formData.userType === 'customer'
+        ? apiUrl('/customers')
+        : apiUrl('/mechanics')
+
+      const payload = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        password: formData.password
+      }
+
+      // Include mechanic-specific required fields
+      if (formData.userType === 'mechanic') {
+        payload.salary = parseFloat(formData.salary) || 0
+        payload.address = formData.address
+      }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          email: formData.email,
-          password: formData.password,
-          user_type: formData.userType
-        })
+        body: JSON.stringify(payload)
       })
       
       const data = await response.json()
       
-      if (data.message === 'User created successfully') {
+      // Many backends return the created resource or a 201 status. Treat non-2xx as failure.
+      if (response.status === 201 || data.id) {
         setMessage('Registration successful! Please login.')
         setFormData({
           firstName: '',
           lastName: '',
           email: '',
           password: '',
-          userType: 'customer'
+          userType: 'customer',
+          salary: '',
+          address: ''
         })
         
         // Redirect to login page after successful registration
@@ -142,6 +159,34 @@ function RegisterView() {
             <option value="mechanic">Mechanic</option>
           </select>
         </div>
+
+        {formData.userType === 'mechanic' && (
+          <>
+            <div className="form-group">
+              <label htmlFor="salary">Salary</label>
+              <input
+                type="number"
+                id="salary"
+                name="salary"
+                value={formData.salary}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="address">Address</label>
+              <input
+                type="text"
+                id="address"
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+          </>
+        )}
         
         <button type="submit" disabled={isLoading}>
           {isLoading ? 'Registering...' : 'Register'}

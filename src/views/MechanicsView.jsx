@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import './MechanicsView.css'
+import { apiUrl } from '../lib/api'
 
 function MechanicsView() {
   // Set up our navigation
@@ -31,7 +32,7 @@ function MechanicsView() {
     }
 
     // Get mechanic info from the server
-    fetch('https://mech-shop-api.onrender.com/mechanics/profile', {
+  fetch(apiUrl('/mechanics/profile'), {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -68,7 +69,7 @@ function MechanicsView() {
   function getJobs(token) {
     setJobsLoading(true);
     
-    fetch('https://mech-shop-api.onrender.com/mechanics/jobs', {
+  fetch(apiUrl('/mechanics/jobs'), {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -107,7 +108,7 @@ function MechanicsView() {
     const token = localStorage.getItem('token')
     
     // Send the updated info to the server
-    fetch('https://mech-shop-api.onrender.com/mechanics/update', {
+  fetch(apiUrl('/mechanics/update'), {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -156,7 +157,7 @@ function MechanicsView() {
   function updateJobStatus(jobId, newStatus) {
     const token = localStorage.getItem('token');
     
-    fetch(`https://mech-shop-api.onrender.com/mechanics/jobs/${jobId}/status`, {
+  fetch(apiUrl(`/mechanics/jobs/${jobId}/status`), {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

@@ -46,9 +46,9 @@ function LoginView() {
     }
 
     setLoading(true)
+
     try {
       const url = buildUrl('/mechanics/login')
-      // Debug outgoing request
       console.debug('Login request ->', { url, payload, credentials: credentialsMode })
 
       const resp = await fetch(url, {
@@ -58,88 +58,59 @@ function LoginView() {
         body: JSON.stringify(payload)
       })
 
-      // Try to parse structured JSON first, otherwise text
-      let serverBody = null
-      try {
-        serverBody = await resp.clone().json()
-      } catch {
-        try {
-          serverBody = await resp.clone().text()
-        } catch {
-          serverBody = null
-        }
+      // Robustly parse JSON/text body
+      let respBody = null
+      try { respBody = await resp.clone().json() } catch {
+        try { respBody = await resp.clone().text() } catch { respBody = null }
       }
 
-      console.error && console.error('Login failed response:', { status: resp.status, body: serverBody })
+      const prettyBody = respBody && typeof respBody === 'object' ? JSON.stringify(respBody, null, 2) : String(respBody)
+      console.log('Login response details:', { status: resp.status, statusText: resp.statusText, headers: Array.from(resp.headers.entries()), body: prettyBody })
 
       if (!resp.ok) {
-        // Provide clear messages for common auth errors
-        if (resp.status === 400) {
-          const msg = serverBody && (serverBody.message || serverBody.error) || 'Bad request - please check your input.'
-          setErrorMessage(msg)
-          return
-        }
-        if (resp.status === 401) {
-          setErrorMessage('Invalid credentials. Please try again.')
-          return
-        }
-        if (resp.status === 403) {
-          setErrorMessage('Forbidden. Your account is not authorized.')
-          return
-        }
-
-        const serverMsg = serverBody && (serverBody.message || JSON.stringify(serverBody)) || `Login failed with status ${resp.status}`
-        setErrorMessage(serverMsg)
+        // Provide actionable messages for common statuses
+        const serverMsg = respBody && (typeof respBody === 'object' ? (respBody.message || respBody.error || JSON.stringify(respBody)) : String(respBody))
+        if (resp.status === 400) { setErrorMessage(serverMsg || 'Bad request - please check your input.'); return }
+        if (resp.status === 401) { setErrorMessage(serverMsg || 'Invalid credentials. Please try again.'); return }
+        if (resp.status === 403) { setErrorMessage(serverMsg || 'Forbidden. Your account is not authorized.'); return }
+        setErrorMessage(serverMsg || `Login failed with status ${resp.status}`)
         return
       }
 
-      const data = await resp.json()
-      const token = data?.token || data?.access_token
+      // Successful response
+      const data = respBody && typeof respBody === 'object' ? respBody : await resp.json().catch(()=>null)
+      const token = data?.token || data?.access_token || data?.accessToken
       if (!token) {
         console.error('Login succeeded but no token in response:', data)
-        setErrorMessage('Login succeeded but no token was returned by the server.')
+        setErrorMessage('Login succeeded but no token returned by server.')
         return
       }
 
-      // Persist token immediately
-      localStorage.setItem('token', token)
-
-      // Fetch profile to determine role/is_admin and persist userType/isAdmin for AdminView
+      // Persist token under multiple keys so AdminView/getAuthToken finds it
       try {
-        const profileResp = await fetch(buildUrl('/mechanics/profile'), {
-          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
-          credentials: credentialsMode
-        })
-
-        let profileBody = null
-        try { profileBody = await profileResp.json() } catch { profileBody = null }
-
-        if (!profileResp.ok) {
-          console.error('Profile fetch failed after login:', { status: profileResp.status, body: profileBody })
-          // Clear token if profile can't be fetched/auth fails
-          localStorage.removeItem('token')
-          setErrorMessage(profileBody?.message || 'Failed to verify profile after login.')
-          return
-        }
-
-        // Determine user type and admin flag
-        const isAdmin = !!(profileBody?.is_admin || profileBody?.isAdmin)
-        const role = isAdmin ? 'admin' : 'mechanic'
-        localStorage.setItem('userType', role)
-        localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false')
-        // notify other parts of the app
-        window.dispatchEvent(new Event('login-status-change'))
-
-        // Navigate: go to admin dashboard if admin, otherwise home
-        if (isAdmin) navigate('/admin')
-        else navigate('/')
-
-      } catch (profileErr) {
-        console.error('Error fetching profile after login:', profileErr)
-        // Keep token but surface error
-        setErrorMessage('Logged in but failed to fetch profile. Try refreshing or logging in again.')
-        return
+        localStorage.setItem('token', token)
+        localStorage.setItem('access_token', token)
+        localStorage.setItem('authToken', token)
+        // also mirror to sessionStorage
+        sessionStorage.setItem('token', token)
+        // cookie fallback (expires in 7 days)
+        document.cookie = `token=${encodeURIComponent(token)};path=/;max-age=${7*24*60*60}`
+      } catch (e) {
+        console.warn('Could not persist token to storage', e)
       }
+
+      // Persist user metadata for role checks
+      if (typeof data.id !== 'undefined') localStorage.setItem('userId', String(data.id))
+      const isAdmin = !!data.is_admin
+      localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false')
+      localStorage.setItem('userType', isAdmin ? 'admin' : 'mechanic')
+
+      // Notify other parts of the app (AdminView listens for this)
+      window.dispatchEvent(new Event('login-status-change'))
+
+      // Navigate to appropriate page
+      if (isAdmin) navigate('/admin')
+      else navigate('/')
     } catch (err) {
       console.error('Login error (network/other):', err)
       setErrorMessage(err.message || 'Network error during login.')

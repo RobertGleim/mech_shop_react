@@ -1,13 +1,17 @@
-import React, { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import './AdminView.css'
 import { apiUrl } from '../lib/api'
+import './AdminView.css'
 
-function AdminView() {
+const AdminView = () => {
   const navigate = useNavigate()
+  
+  // Admin profile state
   const [admin, setAdmin] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  
+  // Customers state
   const [customers, setCustomers] = useState([])
   const [customersLoading, setCustomersLoading] = useState(false)
   const [customersError, setCustomersError] = useState('')
@@ -20,13 +24,19 @@ function AdminView() {
     const token = localStorage.getItem('token')
     const userType = localStorage.getItem('userType')
 
-    if (!token || userType !== 'mechanic') {
+    if (!token) {
+      setError('You must be logged in to view this page')
+      setLoading(false)
+      return
+    }
+    
+    if (userType !== 'mechanic' && userType !== 'admin') {
       setError('You must be logged in as an admin mechanic to view this page')
       setLoading(false)
       return
     }
 
-  fetch(apiUrl('/mechanics/profile'), {
+    fetch(apiUrl('/mechanics/profile'), {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -44,8 +54,7 @@ function AdminView() {
       setAdmin(data)
       setLoading(false)
     })
-    .catch(err => {
-      console.error(err)
+    .catch(() => {
       setError('Failed to load admin profile')
       setLoading(false)
     })
@@ -56,44 +65,63 @@ function AdminView() {
     setCustomersLoading(true)
     setCustomersError('')
     const token = localStorage.getItem('token')
-    // include pagination if desired (defaults used here)
-    let urlStr = apiUrl('/customers')
+    
+    let urlStr
     try {
-      const url = new URL(urlStr, window.location.origin)
-      url.searchParams.set('page', 1)
-      url.searchParams.set('per_page', 50)
-      urlStr = url.toString()
-    } catch (err) {
-      console.warn('Could not build absolute URL for customers, falling back to relative URL. Error:', err)
-      const params = new URLSearchParams({ page: 1, per_page: 50 })
-      urlStr += (urlStr.includes('?') ? '&' : '?') + params.toString()
+      urlStr = apiUrl('/customers')
+    } catch {
+      urlStr = '/api/customers'
     }
 
     fetch(urlStr, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(res => {
+      if (!res.ok) {
+        return res.json().then(errorData => {
+          throw new Error(errorData.message || `HTTP ${res.status}: ${res.statusText}`)
+        })
+      }
+      return res.json()
+    })
+    .then(data => {
+      setCustomers(data.customers || data || [])
+      setCustomersLoading(false)
+    })
+    .catch(() => {
+      setCustomersError('Failed to fetch customers')
+      setCustomersLoading(false)
+    })
+  }
+
+  // Delete a customer
+  const deleteCustomer = (customerId) => {
+    if (!confirm('Are you sure you want to delete this customer?')) return
+    
+    const token = localStorage.getItem('token')
+    
+    fetch(apiUrl(`/customers/${customerId}`), {
+      method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`
       }
     })
     .then(res => {
-      if (!res.ok) {
-        throw new Error('Failed to fetch customers')
-      }
+      if (!res.ok) throw new Error('Failed to delete customer')
       return res.json()
     })
-    .then(data => {
-      // Swagger indicates GET /customers returns a list
-      // Some backends return { customers: [...] } with pagination
-      const list = Array.isArray(data) ? data : (data.customers || data.items || [])
-      setCustomers(list)
-      setCustomersLoading(false)
+    .then(() => {
+      setCustomers(customers.filter(c => c.id !== customerId))
     })
     .catch(err => {
-      console.error('Error fetching customers:', err)
-      setCustomersError('Unable to load customers')
-      setCustomersLoading(false)
+      setCustomersError(`Failed to delete customer: ${err.message}`)
     })
   }
 
+  // Start editing a customer
   const startEdit = (customer) => {
     setEditingCustomer(customer)
     setEditForm({
@@ -105,40 +133,19 @@ function AdminView() {
     setEditError('')
   }
 
-  // Delete a customer (admin)
-  const handleDeleteCustomer = (id) => {
-    if (!window.confirm('Are you sure you want to delete this customer?')) return
-    const token = localStorage.getItem('token')
-  fetch(apiUrl(`/customers/${id}`), {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    .then(res => {
-      if (!res.ok) throw new Error('Failed to delete customer')
-      // Remove from UI
-      setCustomers(prev => prev.filter(c => c.id !== id))
-    })
-    .catch(err => {
-      console.error('Delete customer error:', err)
-      setCustomersError('Could not delete customer')
-    })
-  }
-
-  const handleSaveEdit = (e) => {
-    e.preventDefault()
+  // Update a customer
+  const updateCustomer = () => {
+    if (!editingCustomer) return
+    
     setEditLoading(true)
     setEditError('')
     const token = localStorage.getItem('token')
-    const payload = { ...editForm, id: editingCustomer.id }
-
-  fetch(apiUrl(`/customers/${editingCustomer.id}`), {
+    
+    fetch(apiUrl(`/customers/${editingCustomer.id}`), {
       method: 'PUT',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(editForm)
     })
@@ -146,107 +153,142 @@ function AdminView() {
       if (!res.ok) throw new Error('Failed to update customer')
       return res.json()
     })
-    .then(() => {
-      // Update customer in local list (backend might return updated object)
-      setCustomers(prev => prev.map(c => c.id === editingCustomer.id ? ({ ...c, ...payload }) : c))
+    .then(updatedCustomer => {
+      setCustomers(customers.map(c => 
+        c.id === editingCustomer.id ? updatedCustomer : c
+      ))
       setEditingCustomer(null)
       setEditLoading(false)
     })
     .catch(err => {
-      console.error('Update customer error:', err)
-      setEditError('Could not update customer')
+      setEditError(`Failed to update customer: ${err.message}`)
       setEditLoading(false)
     })
   }
 
-  if (loading) return <div className="admin-container">Loading...</div>
-  if (error) return <div className="admin-container error">{error}</div>
+  if (loading) {
+    return <div className="admin-view loading">Loading admin panel...</div>
+  }
+
+  if (error) {
+    return <div className="admin-view error">Error: {error}</div>
+  }
 
   return (
-    <div className="admin-container">
-      <div className="admin-wrapper">
-        <h1>Admin Dashboard</h1>
-        <h3>Welcome, {admin.first_name} {admin.last_name}</h3>
+    <div className="admin-view">
+      <div className="admin-header">
+        <h1>Admin Panel</h1>
+        <div className="admin-info">
+          <h2>Welcome, {admin?.first_name} {admin?.last_name}</h2>
+          <p>Email: {admin?.email}</p>
+          <p>Phone: {admin?.phone || 'Not provided'}</p>
+        </div>
+      </div>
 
-        <div className="admin-cards">
-          <div className="admin-card">
-            <h4>Customers</h4>
-            <p>View and manage all customers</p>
-            <button onClick={() => fetchCustomers()}>Manage</button>
-          </div>
+      <div className="admin-actions">
+        <div className="section">
+          <h3>Customer Management</h3>
+          <button onClick={fetchCustomers} disabled={customersLoading}>
+            {customersLoading ? 'Loading...' : 'Load Customers'}
+          </button>
+          
+          {customersError && (
+            <div className="error-message">{customersError}</div>
+          )}
+          
+          {customers.length > 0 && (
+            <div className="customers-list">
+              <h4>All Customers ({customers.length})</h4>
+              <div className="customers-grid">
+                {customers.map(customer => (
+                  <div key={customer.id} className="customer-card">
+                    <div className="customer-info">
+                      <h5>{customer.first_name} {customer.last_name}</h5>
+                      <p>Email: {customer.email}</p>
+                      <p>Phone: {customer.phone || 'N/A'}</p>
+                      <p>Address: {customer.address || 'N/A'}</p>
+                      <p>ID: {customer.id}</p>
+                    </div>
+                    <div className="customer-actions">
+                      <button onClick={() => startEdit(customer)}>Edit</button>
+                      <button 
+                        onClick={() => deleteCustomer(customer.id)}
+                        className="delete-btn"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
-          <div className="admin-card">
-            <h4>Mechanics</h4>
-            <p>View and manage mechanics</p>
-            <button onClick={() => navigate('/mechanics')}>Manage</button>
-          </div>
-
-          <div className="admin-card">
-            <h4>Service Tickets</h4>
-            <p>View and manage service tickets</p>
-            <button onClick={() => navigate('/service_ticket')}>Manage</button>
+      {/* Edit Customer Modal */}
+      {editingCustomer && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Edit Customer: {editingCustomer.first_name} {editingCustomer.last_name}</h3>
+            
+            {editError && <div className="error-message">{editError}</div>}
+            
+            <form onSubmit={(e) => { e.preventDefault(); updateCustomer(); }}>
+              <div className="form-group">
+                <label>First Name:</label>
+                <input
+                  type="text"
+                  value={editForm.first_name}
+                  onChange={(e) => setEditForm({...editForm, first_name: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Last Name:</label>
+                <input
+                  type="text"
+                  value={editForm.last_name}
+                  onChange={(e) => setEditForm({...editForm, last_name: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Phone:</label>
+                <input
+                  type="text"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Address:</label>
+                <textarea
+                  value={editForm.address}
+                  onChange={(e) => setEditForm({...editForm, address: e.target.value})}
+                  rows="3"
+                />
+              </div>
+              
+              <div className="form-actions">
+                <button type="submit" disabled={editLoading}>
+                  {editLoading ? 'Updating...' : 'Update Customer'}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setEditingCustomer(null)}
+                  disabled={editLoading}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-        {customersLoading && (
-          <div className="admin-loading">Loading customers...</div>
-        )}
-
-        {customersError && (
-          <div className="admin-error">{customersError}</div>
-        )}
-
-        {customers.length > 0 && (
-          <div className="customers-list">
-            <h3>Customers ({customers.length})</h3>
-            <div className="customers-grid">
-              {customers.map(c => (
-                <div className="customer-card" key={c.id}>
-                  <div className="customer-info">
-                    <p className="customer-name">{c.first_name} {c.last_name}</p>
-                    <p className="customer-email">{c.email}</p>
-                    <p className="customer-phone">{c.phone || '-'}</p>
-                    <p className="customer-address">{c.address || '-'}</p>
-                  </div>
-                  <div className="customer-actions">
-                    <button className="btn" onClick={() => startEdit(c)}>Update</button>
-                    <button className="btn delete" onClick={() => handleDeleteCustomer(c.id)}>Delete</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Edit form */}
-            {editingCustomer && (
-              <div className="edit-panel">
-                <h4>Update Customer: {editingCustomer.first_name} {editingCustomer.last_name}</h4>
-                {editError && <div className="admin-error">{editError}</div>}
-                <form onSubmit={(e) => handleSaveEdit(e)} className="edit-form">
-                  <div className="form-row">
-                    <label>First Name</label>
-                    <input value={editForm.first_name} onChange={(e) => setEditForm({...editForm, first_name: e.target.value})} required />
-                  </div>
-                  <div className="form-row">
-                    <label>Last Name</label>
-                    <input value={editForm.last_name} onChange={(e) => setEditForm({...editForm, last_name: e.target.value})} required />
-                  </div>
-                  <div className="form-row">
-                    <label>Phone</label>
-                    <input value={editForm.phone} onChange={(e) => setEditForm({...editForm, phone: e.target.value})} />
-                  </div>
-                  <div className="form-row">
-                    <label>Address</label>
-                    <input value={editForm.address} onChange={(e) => setEditForm({...editForm, address: e.target.value})} />
-                  </div>
-                  <div className="form-actions">
-                    <button type="submit" className="btn save" disabled={editLoading}>{editLoading ? 'Saving...' : 'Save'}</button>
-                    <button type="button" className="btn cancel" onClick={() => { setEditingCustomer(null); setEditError('') }}>Cancel</button>
-                  </div>
-                </form>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   )
 }

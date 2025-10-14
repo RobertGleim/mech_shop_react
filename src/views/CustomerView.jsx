@@ -41,7 +41,7 @@ function CustomerView() {
       return response.json()
     })
     .then(data => {
-      console.log("Customer data:", data);
+
       setCustomer({
         id: data.id,
         firstName: data.first_name,
@@ -59,8 +59,8 @@ function CustomerView() {
       })
       setLoading(false)
     })
-    .catch(error => {
-      console.error('Error fetching customer data:', error)
+    .catch(() => {
+
       setLoading(false)
     })
   }, [])
@@ -104,7 +104,7 @@ function CustomerView() {
       password: 'dummy_password_not_used'
     }
     
-    console.log('Sending update data:', updateData)
+
     
   // Send update request to API
   fetch(apiUrl('/customers'), {
@@ -118,9 +118,7 @@ function CustomerView() {
     .then(async response => {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        console.error('Backend error response:', errorData)
-        console.error('Error Message object:', errorData.Message)
-        console.error('Full error structure:', JSON.stringify(errorData, null, 2))
+
         
         // Handle validation errors from marshmallow
         let errorMessage = 'Failed to update profile'
@@ -138,8 +136,8 @@ function CustomerView() {
       }
       return response.json()
     })
-    .then(data => {
-      console.log("Update response:", data);
+    .then(() => {
+
       // Update the customer object with new values
       setCustomer({
         ...customer,
@@ -153,7 +151,7 @@ function CustomerView() {
       setEditMode(false)
     })
     .catch(error => {
-      console.error('Error updating profile:', error)
+
       setUpdateError(error.message || 'Failed to update profile. Please try again.')
     })
   }

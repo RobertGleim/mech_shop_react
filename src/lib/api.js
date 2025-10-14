@@ -7,8 +7,16 @@ export function apiBase() {
 
 export function apiUrl(path) {
   const base = apiBase();
-  if (!base) return path;
-  if (base.endsWith('/') && path.startsWith('/')) return base.slice(0, -1) + path;
-  if (!base.endsWith('/') && !path.startsWith('/')) return `${base}/${path}`;
-  return `${base}${path}`;
+  let finalUrl;
+  if (!base) {
+    finalUrl = path;
+  } else if (base.endsWith('/') && path.startsWith('/')) {
+    finalUrl = base.slice(0, -1) + path;
+  } else if (!base.endsWith('/') && !path.startsWith('/')) {
+    finalUrl = `${base}/${path}`;
+  } else {
+    finalUrl = `${base}${path}`;
+  }
+  
+  return finalUrl;
 }

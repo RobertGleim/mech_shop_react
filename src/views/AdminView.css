@@ -158,3 +158,140 @@
 .btn.cancel { background: #888 }
 
 .admin-loading, .admin-error { margin-top: 1rem }
+
+/* Mechanics Management Styles */
+.mechanics-list {
+  margin-top: 1.5rem;
+}
+
+.mechanics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.mechanic-card {
+  background-color: #2c2c2c;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid #3d3d3d;
+  box-shadow: #1f1f1f 4px 4px 0px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.mechanic-info h5 {
+  margin: 0 0 0.5rem 0;
+  color: #f5f5f5;
+  font-size: 1.1rem;
+}
+
+.mechanic-info p {
+  margin: 0.25rem 0;
+  color: #dcdcdc;
+  font-size: 0.9rem;
+}
+
+.mechanic-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.mechanic-actions button {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: #457997;
+  color: #fff;
+  transition: all 0.2s;
+}
+
+.mechanic-actions button:hover {
+  transform: translateY(-2px);
+}
+
+.mechanic-actions .delete-btn {
+  background: #ff6b6b;
+}
+
+.mechanic-actions .delete-btn:hover {
+  background: #ff5252;
+}
+
+/* Modal Improvements for mechanics forms */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #f5f5f5;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #3d3d3d;
+  background: #262626;
+  color: #f5f5f5;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #457997;
+  box-shadow: 0 0 0 2px rgba(69, 121, 151, 0.2);
+}
+
+.form-group input[type="checkbox"] {
+  width: auto;
+  margin-right: 0.5rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  justify-content: flex-end;
+}
+
+.form-actions button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.form-actions button[type="submit"] {
+  background: #2ecc71;
+  color: #fff;
+}
+
+.form-actions button[type="submit"]:hover {
+  background: #27ae60;
+}
+
+.form-actions button[type="button"] {
+  background: #888;
+  color: #fff;
+}
+
+.form-actions button[type="button"]:hover {
+  background: #777;
+}
+
+.form-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -1,21 +1,15 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './MechanicsView.css'
 import { apiUrl } from '../lib/api'
 
 function MechanicsView() {
   // Set up our navigation
+  const navigate = useNavigate()
   
   // All of our state variables
   const [mechanic, setMechanic] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [editMode, setEditMode] = useState(false)
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [email, setEmail] = useState("")
-  const [salary, setSalary] = useState("")
-  const [address, setAddress] = useState("")
-  const [updateSuccess, setUpdateSuccess] = useState(false)
-  const [updateError, setUpdateError] = useState('')
   const [showProfile, setShowProfile] = useState(true)
   const [jobs, setJobs] = useState([])
   const [jobsLoading, setJobsLoading] = useState(false)
@@ -26,171 +20,106 @@ function MechanicsView() {
     const token = localStorage.getItem('token')
     const userType = localStorage.getItem('userType')
 
+    console.log('MechanicsView - checking authentication:', { hasToken: !!token, userType })
+
     if (!token || userType !== 'mechanic') {
+      console.log('No token or not a mechanic, redirecting to login')
+      navigate('/login')
       setLoading(false)
       return
     }
 
     // Get mechanic info from the server
-  fetch(apiUrl('/mechanics/profile'), {
+    fetch(apiUrl('/mechanics/profile'), {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     })
     .then(response => {
       if (!response.ok) {
-        alert('Could not get your profile!')
-        throw new Error('Failed to fetch mechanic data')
+        if (response.status === 401) {
+          // Token is invalid or expired - redirect to login
+          localStorage.removeItem('token')
+          localStorage.removeItem('userType')
+          localStorage.removeItem('isAdmin')
+          navigate('/login')
+          return
+        }
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
       return response.json()
     })
     .then(data => {
-      console.log("Got mechanic data:", data);
-      
-      // Save the data we got
+      console.log('Mechanic profile loaded:', data)
       setMechanic(data)
-      setFirstName(data.first_name)
-      setLastName(data.last_name)
-      setEmail(data.email)
-      setSalary(data.salary)
-      setAddress(data.address)
-      setLoading(false)
-      
-      // Now get the jobs too
-      getJobs(token);
-    })
-    .catch(error => {
-      console.log('Error getting mechanic data:', error)
       setLoading(false)
     })
-  }, []) // Empty array means this only runs once when the page loads
-  
-  // Function to get assigned jobs
-  function getJobs(token) {
-    setJobsLoading(true);
-    
-  fetch(apiUrl('/mechanics/jobs'), {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    .then(response => {
-      if (!response.ok) {
-        alert('Could not get your jobs!')
-        throw new Error('Failed to fetch assigned jobs')
-      }
-      return response.json()
-    })
-    .then(data => {
-      console.log("Got jobs:", data);
-      // Save the jobs we got
-      setJobs(data.jobs || []);
-      setJobsLoading(false);
-    })
     .catch(error => {
-      console.log('Error getting jobs:', error);
-      setJobsLoading(false);
-    });
-  }
+      console.error('Error getting mechanic info:', error)
+      setLoading(false)
+      // If there's an authentication error, redirect to login
+      if (error.message.includes('401')) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('userType')
+        localStorage.removeItem('isAdmin')
+        navigate('/login')
+      }
+    })
+  }, [navigate])
 
-  // Function to handle saving profile changes
-  function handleSaveProfile(e) {
-    e.preventDefault()
-    setUpdateError('')
-    setUpdateSuccess(false)
+  // Profile is read-only for mechanics - updates handled by administration
+
+  // Function to load jobs for this mechanic
+  const loadJobs = async () => {
+    const token = localStorage.getItem('token')
     
-    // Make sure all fields have values
-    if (!firstName || !lastName || !address) {
-      setUpdateError('Please fill out all required fields')
+    if (!token) {
+      navigate('/login')
       return
     }
 
-    const token = localStorage.getItem('token')
-    
-    // Send the updated info to the server
-  fetch(apiUrl('/mechanics/update'), {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        first_name: firstName,
-        last_name: lastName,
-        address: address
+    setJobsLoading(true)
+    try {
+      console.log('Loading jobs for mechanic:', mechanic.id)
+      
+      const response = await fetch(apiUrl(`/mechanics/${mechanic.id}/jobs`), {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       })
-    })
-    .then(response => {
+
       if (!response.ok) {
-        alert('Could not update your profile!')
-        throw new Error('Failed to update profile')
+        if (response.status === 401) {
+          localStorage.removeItem('token')
+          localStorage.removeItem('userType')
+          localStorage.removeItem('isAdmin')
+          navigate('/login')
+          return
+        }
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
-      return response.json()
-    })
-    .then(data => {
-      console.log("Profile updated:", data);
+
+      const jobsData = await response.json()
+      console.log('Jobs loaded:', jobsData)
+      setJobs(jobsData)
       
-      // Update our local data
-      setMechanic({
-        ...mechanic,
-        first_name: firstName,
-        last_name: lastName,
-        address: address
-      })
-      
-      // Show success message and exit edit mode
-      setUpdateSuccess(true)
-      setEditMode(false)
-      
-      // Hide success message after 3 seconds
-      setTimeout(() => {
-        setUpdateSuccess(false)
-      }, 3000)
-    })
-    .catch(error => {
-      console.log('Error updating profile:', error)
-      setUpdateError('Could not save your profile. Please try again.')
-    })
+    } catch (error) {
+      console.error('Error loading jobs:', error)
+    } finally {
+      setJobsLoading(false)
+    }
   }
 
-  // Function to update job status
-  function updateJobStatus(jobId, newStatus) {
-    const token = localStorage.getItem('token');
+  // Function to log out
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('userType')
+    localStorage.removeItem('isAdmin')
     
-  fetch(apiUrl(`/mechanics/jobs/${jobId}/status`), {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ status: newStatus })
-    })
-    .then(response => {
-      if (!response.ok) {
-        alert('Could not update job status!')
-        throw new Error('Failed to update job status')
-      }
-      return response.json()
-    })
-    .then(data => {
-      console.log("Job status updated:", data);
-      
-      // Update job in our list
-      let newJobs = [...jobs];
-      for (let i = 0; i < newJobs.length; i++) {
-        if (newJobs[i].id === jobId) {
-          newJobs[i].status = newStatus;
-          break;
-        }
-      }
-      setJobs(newJobs);
-      
-      alert(`Job status updated to ${newStatus}!`);
-    })
-    .catch(error => {
-      console.log('Error updating job status:', error);
-      alert('Could not update job status. Please try again.');
-    });
+    // Dispatch event to update navbar
+    window.dispatchEvent(new Event('login-status-change'))
+    
+    navigate('/login')
   }
 
   // Show loading message while waiting
@@ -200,7 +129,14 @@ function MechanicsView() {
 
   // Show login message if not logged in
   if (!mechanic) {
-    return <div className="mechanic-container">Please log in first as a mechanic</div>
+    return (
+      <div className="mechanic-container">
+        <div className="mechanic-wrapper">
+          <h2>Please log in as a mechanic to view this page</h2>
+          <button onClick={() => navigate('/login')}>Go to Login</button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -208,186 +144,89 @@ function MechanicsView() {
       <div className="mechanic-wrapper">
         <h1>Welcome {mechanic.first_name}!</h1>
         <h2>Mechanic Dashboard</h2>
-
-        {/* Success message */}
-        {updateSuccess && (
-          <div className="success-message">
-            Your information has been updated successfully!
-          </div>
-        )}
-
-        {/* Tab buttons */}
-        <div className="tab-navigation">
+        
+        <div className="mechanic-navigation">
           <button 
-            className={showProfile ? "tab-button active" : "tab-button"}
+            className={showProfile ? 'active' : ''}
             onClick={() => setShowProfile(true)}
           >
-            Profile
+            My Profile
           </button>
           <button 
-            className={!showProfile ? "tab-button active" : "tab-button"}
-            onClick={() => setShowProfile(false)}
+            className={!showProfile ? 'active' : ''}
+            onClick={() => {
+              setShowProfile(false)
+              if (jobs.length === 0) {
+                loadJobs()
+              }
+            }}
           >
             My Jobs
           </button>
+          <button onClick={handleLogout} className="logout-btn">
+            Logout
+          </button>
         </div>
 
-        {/* Profile tab */}
-        {showProfile && (
-          <div className="mechanic-card">
-            <h3>Mechanic Information</h3>
+        {showProfile ? (
+          <div className="profile-section">
+            <h3>Profile Information</h3>
             
-            {!editMode ? (
-              // Show profile info
-              <>
-                <div className="info-section">
-                  <p><strong>Name:</strong> {mechanic.first_name} {mechanic.last_name}</p>
-                  <p><strong>Email:</strong> {mechanic.email}</p>
-                  <p><strong>Salary:</strong> ${mechanic.salary}</p>
-                  <p><strong>Address:</strong> {mechanic.address}</p>
-                </div>
-
-                <div className="buttons-section">
-                  <button 
-                    className="mechanic-btn edit-btn" 
-                    onClick={() => setEditMode(true)}
-                  >
-                    Update Profile
-                  </button>
-                </div>
-              </>
-            ) : (
-              // Show edit form
-              <form onSubmit={handleSaveProfile} className="update-form">
-                {updateError && <div className="error-message">{updateError}</div>}
-                
-                <div className="form-group">
-                  <label>First Name</label>
-                  <input 
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label>Last Name</label>
-                  <input 
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label>Email</label>
-                  <input 
-                    type="email"
-                    value={email}
-                    disabled
-                    className="disabled-input"
-                  />
-                  <small>Email cannot be changed</small>
-                </div>
-                
-                <div className="form-group">
-                  <label>Salary</label>
-                  <input 
-                    type="text"
-                    value={salary}
-                    disabled
-                    className="disabled-input"
-                  />
-                  <small>Salary is set by management</small>
-                </div>
-                
-                <div className="form-group">
-                  <label>Address</label>
-                  <input 
-                    type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div className="form-buttons">
-                  <button type="submit" className="mechanic-btn save-btn">
-                    Save Changes
-                  </button>
-                  <button 
-                    type="button" 
-                    className="mechanic-btn cancel-btn"
-                    onClick={() => {
-                      setEditMode(false);
-                      setFirstName(mechanic.first_name);
-                      setLastName(mechanic.last_name);
-                      setAddress(mechanic.address);
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            )}
+            <div className="profile-display">
+              <div className="form-group">
+                <label><strong>First Name:</strong></label>
+                <span>{mechanic.first_name}</span>
+              </div>
+              
+              <div className="form-group">
+                <label><strong>Last Name:</strong></label>
+                <span>{mechanic.last_name}</span>
+              </div>
+              
+              <div className="form-group">
+                <label><strong>Email:</strong></label>
+                <span>{mechanic.email}</span>
+              </div>
+              
+              <div className="form-group">
+                <label><strong>Salary:</strong></label>
+                <span>${mechanic.salary}</span>
+              </div>
+              
+              <div className="form-group">
+                <label><strong>Address:</strong></label>
+                <span>{mechanic.address || "Not provided"}</span>
+              </div>
+              
+              <div className="profile-info-note" style={{marginTop: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '5px', border: '1px solid #e9ecef'}}>
+                <p style={{color: '#2196F3', fontWeight: 'bold', margin: '0 0 10px 0', fontSize: '16px'}}>
+                  📝 Profile Information is Read-Only
+                </p>
+                <small style={{color: '#666', fontStyle: 'italic', lineHeight: '1.5', display: 'block'}}>
+                  For security reasons, profile updates are managed by administration. 
+                  If you need to change your personal information, please contact your manager 
+                  or HR department.
+                </small>
+              </div>
+            </div>
           </div>
-        )}
-
-        {/* Jobs tab */}
-        {!showProfile && (
-          <div className="mechanic-card">
-            <h3>Your Assigned Jobs</h3>
+        ) : (
+          <div className="jobs-section">
+            <h3>My Assigned Jobs</h3>
             
             {jobsLoading ? (
-              <div className="loading-jobs">Loading your jobs...</div>
+              <div>Loading jobs...</div>
             ) : jobs.length === 0 ? (
-              <div className="no-jobs">You don't have any jobs assigned right now.</div>
+              <div>No jobs assigned yet.</div>
             ) : (
               <div className="jobs-list">
                 {jobs.map(job => (
-                  <div key={job.id} className="job-item">
-                    <div className="job-header">
-                      <h4>Job #{job.id}</h4>
-                      <span className="job-status">
-                        {job.status}
-                      </span>
-                    </div>
-                    
-                    <div className="job-details">
-                      <p><strong>Customer:</strong> {job.customer_name}</p>
-                      <p><strong>Vehicle:</strong> {job.vehicle}</p>
-                      <p><strong>Service:</strong> {job.service_type}</p>
-                      <p><strong>Description:</strong> {job.description}</p>
-                      <p><strong>Date:</strong> {new Date(job.scheduled_date).toLocaleDateString()}</p>
-                    </div>
-                    
-                    <div className="job-actions">
-                      {job.status === 'PENDING' && (
-                        <button 
-                          className="job-btn start-btn"
-                          onClick={() => updateJobStatus(job.id, 'IN_PROGRESS')}
-                        >
-                          Start Job
-                        </button>
-                      )}
-                      
-                      {job.status === 'IN_PROGRESS' && (
-                        <button 
-                          className="job-btn complete-btn"
-                          onClick={() => updateJobStatus(job.id, 'COMPLETED')}
-                        >
-                          Complete Job
-                        </button>
-                      )}
-                      
-                      {job.status === 'COMPLETED' && (
-                        <div className="job-completed-message">
-                          Job completed!
-                        </div>
-                      )}
-                    </div>
+                  <div key={job.id} className="job-card">
+                    <h4>Job #{job.id}</h4>
+                    <p><strong>Customer:</strong> {job.customer_name}</p>
+                    <p><strong>Description:</strong> {job.description}</p>
+                    <p><strong>Status:</strong> {job.status}</p>
+                    <p><strong>Created:</strong> {new Date(job.created_at).toLocaleDateString()}</p>
                   </div>
                 ))}
               </div>

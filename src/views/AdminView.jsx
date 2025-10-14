@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiUrl } from '../lib/api'
 import './AdminView.css'
 
-const AdminView = () => {
+// Use production API only in production mode; otherwise use dev proxy
+const apiBase = import.meta.env.MODE === 'production' ? import.meta.env.VITE_API_URL || '' : ''
+
+function AdminView(props) {
   const navigate = useNavigate()
-  
+  const [errorMessage, setErrorMessage] = useState('')
+
   // Admin profile state
   const [admin, setAdmin] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -19,6 +23,22 @@ const AdminView = () => {
   const [editForm, setEditForm] = useState({ first_name: '', last_name: '', phone: '', address: '' })
   const [editLoading, setEditLoading] = useState(false)
   const [editError, setEditError] = useState('')
+
+  // Mechanics state
+  const [mechanics, setMechanics] = useState([])
+  const [mechanicsLoading, setMechanicsLoading] = useState(false)
+  const [mechanicsError, setMechanicsError] = useState('')
+  const [editingMechanic, setEditingMechanic] = useState(null)
+  const [mechanicEditForm, setMechanicEditForm] = useState({ 
+    first_name: '', 
+    last_name: '', 
+    email: '', 
+    salary: '', 
+    address: '',
+    is_admin: false 
+  })
+  const [mechanicEditLoading, setMechanicEditLoading] = useState(false)
+  const [mechanicEditError, setMechanicEditError] = useState('')
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -42,7 +62,18 @@ const AdminView = () => {
       }
     })
     .then(res => {
-      if (!res.ok) throw new Error('Failed to fetch admin profile')
+      if (!res.ok) {
+        if (res.status === 401) {
+          // Token is invalid or expired
+          localStorage.removeItem('token')
+          localStorage.removeItem('userType')
+          localStorage.removeItem('isAdmin')
+          window.dispatchEvent(new Event('login-status-change'))
+          navigate('/login')
+          throw new Error('Your session has expired. Please log in again.')
+        }
+        throw new Error(`Failed to fetch admin profile: ${res.status} ${res.statusText}`)
+      }
       return res.json()
     })
     .then(data => {
@@ -54,8 +85,9 @@ const AdminView = () => {
       setAdmin(data)
       setLoading(false)
     })
-    .catch(() => {
-      setError('Failed to load admin profile')
+    .catch((err) => {
+      console.error('Admin profile fetch error:', err)
+      setError(err.message || 'Failed to load admin profile')
       setLoading(false)
     })
   }, [navigate])
@@ -81,8 +113,19 @@ const AdminView = () => {
     })
     .then(res => {
       if (!res.ok) {
+        if (res.status === 401) {
+          // Token is invalid or expired
+          localStorage.removeItem('token')
+          localStorage.removeItem('userType')
+          localStorage.removeItem('isAdmin')
+          window.dispatchEvent(new Event('login-status-change'))
+          navigate('/login')
+          throw new Error('Session expired. Please log in again.')
+        }
         return res.json().then(errorData => {
           throw new Error(errorData.message || `HTTP ${res.status}: ${res.statusText}`)
+        }).catch(() => {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`)
         })
       }
       return res.json()
@@ -91,8 +134,9 @@ const AdminView = () => {
       setCustomers(data.customers || data || [])
       setCustomersLoading(false)
     })
-    .catch(() => {
-      setCustomersError('Failed to fetch customers')
+    .catch((err) => {
+      console.error('Customers fetch error:', err)
+      setCustomersError(err.message || 'Failed to fetch customers')
       setCustomersLoading(false)
     })
   }
@@ -166,6 +210,159 @@ const AdminView = () => {
     })
   }
 
+  // Fetch all mechanics from the API (admin-only)
+  const fetchMechanics = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+
+      const url = apiBase ? `${apiBase.replace(/\/$/, '')}/mechanics` : '/api/mechanics'
+      // When using the dev proxy (relative URL), cookies can be included if needed by backend
+      const credentialsMode = apiBase ? 'omit' : 'include'
+
+      const resp = await fetch(url, { headers, credentials: credentialsMode })
+
+      if (!resp.ok) {
+        // Handle expired/invalid admin session
+        if (resp.status === 401 || resp.status === 403) {
+          localStorage.removeItem('token')
+          // localStorage.removeItem('user') // if you store additional auth data
+          const msg = 'Your admin session has expired. Please login again with an admin account.'
+          console.warn('Mechanics fetch auth error:', resp.status, msg)
+          setErrorMessage(msg)
+          navigate('/login')
+          return
+        }
+
+        // Non-auth HTTP error: surface message
+        const text = await resp.text().catch(() => resp.statusText || 'Unknown error')
+        throw new Error(text || `Request failed with status ${resp.status}`)
+      }
+
+      const data = await resp.json()
+      setMechanics(data || [])
+      setMechanicsLoading(false)
+    } catch (err) {
+      // Network or parsing error
+      console.error('Mechanics fetch error:', err)
+      // show a user-friendly message if not already set by auth branch
+      if (!errorMessage) setErrorMessage(err.message || 'Failed to load mechanics.')
+    }
+  }
+
+  useEffect(() => {
+    fetchMechanics()
+  }, [])
+
+  // Delete a mechanic
+  const deleteMechanic = (mechanicId) => {
+    if (!confirm('Are you sure you want to delete this mechanic?')) return
+    
+    const token = localStorage.getItem('token')
+    
+    // Try with ID in path first, fallback to body if needed
+    fetch(apiUrl(`/mechanics/${mechanicId}`), {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(res => {
+      if (!res.ok) {
+        // If path-based delete fails, try body-based delete as fallback
+        return fetch(apiUrl('/mechanics'), {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id: mechanicId })
+        })
+      }
+      return res
+    })
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to delete mechanic')
+      return res.json()
+    })
+    .then(() => {
+      setMechanics(mechanics.filter(m => m.id !== mechanicId))
+    })
+    .catch(err => {
+      setMechanicsError(`Failed to delete mechanic: ${err.message}`)
+    })
+  }
+
+  // Start editing a mechanic
+  const startMechanicEdit = (mechanic) => {
+    setEditingMechanic(mechanic)
+    setMechanicEditForm({
+      first_name: mechanic.first_name || '',
+      last_name: mechanic.last_name || '',
+      email: mechanic.email || '',
+      salary: mechanic.salary || '',
+      address: mechanic.address || '',
+      is_admin: mechanic.is_admin || false
+    })
+    setMechanicEditError('')
+  }
+
+  // Update a mechanic
+  const updateMechanic = () => {
+    if (!editingMechanic) return
+    
+    setMechanicEditLoading(true)
+    setMechanicEditError('')
+    const token = localStorage.getItem('token')
+    
+    // Include the ID in the request body along with other fields
+    const updateData = {
+      ...mechanicEditForm,
+      id: editingMechanic.id
+    }
+    
+    // Try with ID in path first, fallback to body-only if needed
+    fetch(apiUrl(`/mechanics/${editingMechanic.id}`), {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(mechanicEditForm)
+    })
+    .then(res => {
+      if (!res.ok && res.status === 404) {
+        // If path-based update fails, try body-based update as fallback
+        return fetch(apiUrl('/mechanics'), {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(updateData)
+        })
+      }
+      return res
+    })
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to update mechanic')
+      return res.json()
+    })
+    .then(updatedMechanic => {
+      setMechanics(mechanics.map(m => 
+        m.id === editingMechanic.id ? updatedMechanic : m
+      ))
+      setEditingMechanic(null)
+      setMechanicEditLoading(false)
+    })
+    .catch(err => {
+      setMechanicEditError(`Failed to update mechanic: ${err.message}`)
+      setMechanicEditLoading(false)
+    })
+  }
+
   if (loading) {
     return <div className="admin-view loading">Loading admin panel...</div>
   }
@@ -213,6 +410,46 @@ const AdminView = () => {
                       <button onClick={() => startEdit(customer)}>Edit</button>
                       <button 
                         onClick={() => deleteCustomer(customer.id)}
+                        className="delete-btn"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="section">
+          <h3>Mechanics Management</h3>
+          <button onClick={fetchMechanics} disabled={mechanicsLoading}>
+            {mechanicsLoading ? 'Loading...' : 'Load Mechanics'}
+          </button>
+          
+          {mechanicsError && (
+            <div className="error-message">{mechanicsError}</div>
+          )}
+          
+          {mechanics.length > 0 && (
+            <div className="mechanics-list">
+              <h4>All Mechanics ({mechanics.length})</h4>
+              <div className="mechanics-grid">
+                {mechanics.map(mechanic => (
+                  <div key={mechanic.id} className="mechanic-card">
+                    <div className="mechanic-info">
+                      <h5>{mechanic.first_name} {mechanic.last_name}</h5>
+                      <p>Email: {mechanic.email}</p>
+                      <p>Salary: ${mechanic.salary?.toLocaleString() || 'N/A'}</p>
+                      <p>Address: {mechanic.address || 'N/A'}</p>
+                      <p>Admin: {mechanic.is_admin ? 'Yes' : 'No'}</p>
+                      <p>ID: {mechanic.id}</p>
+                    </div>
+                    <div className="mechanic-actions">
+                      <button onClick={() => startMechanicEdit(mechanic)}>Edit</button>
+                      <button 
+                        onClick={() => deleteMechanic(mechanic.id)}
                         className="delete-btn"
                       >
                         Delete
@@ -287,6 +524,99 @@ const AdminView = () => {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Edit Mechanic Modal */}
+      {editingMechanic && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Edit Mechanic: {editingMechanic.first_name} {editingMechanic.last_name}</h3>
+            
+            {mechanicEditError && <div className="error-message">{mechanicEditError}</div>}
+            
+            <form onSubmit={(e) => { e.preventDefault(); updateMechanic(); }}>
+              <div className="form-group">
+                <label>First Name:</label>
+                <input
+                  type="text"
+                  value={mechanicEditForm.first_name}
+                  onChange={(e) => setMechanicEditForm({...mechanicEditForm, first_name: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Last Name:</label>
+                <input
+                  type="text"
+                  value={mechanicEditForm.last_name}
+                  onChange={(e) => setMechanicEditForm({...mechanicEditForm, last_name: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Email:</label>
+                <input
+                  type="email"
+                  value={mechanicEditForm.email}
+                  onChange={(e) => setMechanicEditForm({...mechanicEditForm, email: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Salary:</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={mechanicEditForm.salary}
+                  onChange={(e) => setMechanicEditForm({...mechanicEditForm, salary: parseFloat(e.target.value) || 0})}
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Address:</label>
+                <textarea
+                  value={mechanicEditForm.address}
+                  onChange={(e) => setMechanicEditForm({...mechanicEditForm, address: e.target.value})}
+                  rows="3"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={mechanicEditForm.is_admin}
+                    onChange={(e) => setMechanicEditForm({...mechanicEditForm, is_admin: e.target.checked})}
+                  />
+                  Admin Privileges
+                </label>
+              </div>
+              
+              <div className="form-actions">
+                <button type="submit" disabled={mechanicEditLoading}>
+                  {mechanicEditLoading ? 'Updating...' : 'Update Mechanic'}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setEditingMechanic(null)}
+                  disabled={mechanicEditLoading}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="error">
+          {errorMessage}
         </div>
       )}
     </div>

@@ -3,6 +3,9 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import './LoginView.css'
 import { apiUrl } from '../lib/api'
 
+// Use production API only in production mode; in dev use the dev proxy
+const apiBase = import.meta.env.MODE === 'production' ? import.meta.env.VITE_API_URL || '' : ''
+
 function LoginView() {
   // Make variables for form data
   const [email, setEmail] = useState('')
@@ -11,10 +14,11 @@ function LoginView() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [userType, setUserType] = useState('customer')
+  const [errorMessage, setErrorMessage] = useState('')
   const navigate = useNavigate()
 
   // Function that runs when form is submitted
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     // Stop the page from refreshing
     e.preventDefault()
     
@@ -35,19 +39,40 @@ function LoginView() {
       password: password
     }
 
-      const endpoint = userType === 'customer'
-        ? apiUrl('/customers/login')
-        : apiUrl('/mechanics/login')
+    try {
+      // Build request URL: production-only apiBase, otherwise dev proxy
+      const url = apiBase ? `${apiBase.replace(/\/$/, '')}/mechanics/login` : '/api/mechanics/login'
 
-    fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(loginData)
-    })
-    .then(response => response.json())
-    .then(data => {
+      // Only include cookies when using the dev proxy (same-origin); omit for external API
+      const credentialsMode = apiBase ? 'omit' : 'include'
+
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        credentials: credentialsMode,
+        body: JSON.stringify(loginData)
+      })
+
+      if (!resp.ok) {
+        // Handle common auth errors with friendly messages
+        if (resp.status === 401) {
+          setErrorMessage('Invalid credentials. Please try again.')
+          return
+        }
+        if (resp.status === 403) {
+          // Distinguish between missing permissions vs server rejecting cross-origin requests
+          const msg = apiBase
+            ? 'Access forbidden by the production API (403). If this should work locally, run the dev server without VITE_API_URL so the proxy is used, or check backend CORS/auth settings.'
+            : 'Forbidden. Your account is not authorized.'
+          setErrorMessage(msg)
+          return
+        }
+        const errText = await resp.text().catch(() => '')
+        throw new Error(errText || `Login failed with status ${resp.status}`)
+      }
+
+      const data = await resp.json()
+
       if (data.token) {
         // Save login info
         localStorage.setItem('token', data.token)
@@ -66,7 +91,13 @@ function LoginView() {
               'Authorization': `Bearer ${data.token}`
             }
           })
-          .then(res => res.ok ? res.json() : Promise.reject('Failed to fetch profile'))
+          .then(res => {
+            if (!res.ok) {
+              console.error('Profile fetch failed:', res.status, res.statusText)
+              throw new Error(`Profile fetch failed: ${res.status} ${res.statusText}`)
+            }
+            return res.json()
+          })
           .then(profile => {
             const isAdmin = profile?.is_admin || profile?.isAdmin || false
             // persist admin flag for NavBar and other components
@@ -86,8 +117,9 @@ function LoginView() {
               navigate('/mechanic')
             }
           })
-          .catch(() => {
+          .catch((err) => {
             // If profile fetch fails for any reason, fall back to mechanic dashboard
+            console.error('Profile fetch error after login:', err)
             localStorage.removeItem('isAdmin')
             // Notify NavBar about the status change even if profile fetch fails
             window.dispatchEvent(new Event('login-status-change'))
@@ -101,11 +133,11 @@ function LoginView() {
         setError('Login failed - invalid credentials')
       }
       setLoading(false)
-    })
-    .catch(() => {
-      setError('Connection error')
+    } catch (err) {
+      console.error('Login error:', err)
+      setErrorMessage(err.message || 'Network error during login.')
       setLoading(false)
-    })
+    }
   }
 
   return (
@@ -120,6 +152,7 @@ function LoginView() {
           <form onSubmit={handleSubmit} className="login-form">
             {error && <div className="alert alert-error">{error}</div>}
             {success && <div className="alert alert-success">{success}</div>}
+            {errorMessage && <div className="error">{errorMessage}</div>}
 
             <div className="user-type-switch">
               <button 

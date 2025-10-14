@@ -37,8 +37,10 @@ function NavBar() {
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('userType')
-      localStorage.removeItem('isAdmin')
+    localStorage.removeItem('isAdmin')
     setIsLoggedIn(false)
+    setUserType(null)
+    setIsAdmin(false)
     
     // Dispatch event to notify other components
     window.dispatchEvent(new Event('login-status-change'))

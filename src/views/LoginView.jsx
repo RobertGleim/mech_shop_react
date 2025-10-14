@@ -72,15 +72,25 @@ function LoginView() {
             // persist admin flag for NavBar and other components
             if (isAdmin) {
               localStorage.setItem('isAdmin', 'true')
-              navigate('/admin')
             } else {
               localStorage.removeItem('isAdmin')
+            }
+            
+            // Notify NavBar and other components about the login status change
+            window.dispatchEvent(new Event('login-status-change'))
+            
+            // Navigate based on admin status
+            if (isAdmin) {
+              navigate('/admin')
+            } else {
               navigate('/mechanic')
             }
           })
           .catch(() => {
             // If profile fetch fails for any reason, fall back to mechanic dashboard
             localStorage.removeItem('isAdmin')
+            // Notify NavBar about the status change even if profile fetch fails
+            window.dispatchEvent(new Event('login-status-change'))
             navigate('/mechanic')
           })
         } else {

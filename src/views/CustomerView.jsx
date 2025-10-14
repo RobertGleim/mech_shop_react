@@ -8,7 +8,13 @@ function CustomerView() {
   const [customer, setCustomer] = useState(null)
   const [loading, setLoading] = useState(true)
   const [editMode, setEditMode] = useState(false)
-  const [updatedInfo, setUpdatedInfo] = useState({})
+  const [updatedInfo, setUpdatedInfo] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: ''
+  })
   const [updateSuccess, setUpdateSuccess] = useState(false)
   const [updateError, setUpdateError] = useState('')
 
@@ -37,6 +43,7 @@ function CustomerView() {
     .then(data => {
       console.log("Customer data:", data);
       setCustomer({
+        id: data.id,
         firstName: data.first_name,
         lastName: data.last_name,
         email: data.email,
@@ -79,25 +86,55 @@ function CustomerView() {
       return
     }
 
+    // Check if customer ID is available
+    if (!customer?.id) {
+      setUpdateError('Customer ID not found. Please refresh the page and try again.')
+      return
+    }
+
     const token = localStorage.getItem('token')
     
+    const updateData = {
+      first_name: updatedInfo.firstName,
+      last_name: updatedInfo.lastName,
+      email: updatedInfo.email,
+      phone: updatedInfo.phone,
+      address: updatedInfo.address,
+      // Temporary: backend might require password field
+      password: 'dummy_password_not_used'
+    }
+    
+    console.log('Sending update data:', updateData)
+    
   // Send update request to API
-  fetch(apiUrl('/customers/update'), {
+  fetch(apiUrl('/customers'), {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({
-        first_name: updatedInfo.firstName,
-        last_name: updatedInfo.lastName,
-        phone: updatedInfo.phone,
-        address: updatedInfo.address
-      })
+      body: JSON.stringify(updateData)
     })
-    .then(response => {
+    .then(async response => {
       if (!response.ok) {
-        throw new Error('Failed to update profile')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Backend error response:', errorData)
+        console.error('Error Message object:', errorData.Message)
+        console.error('Full error structure:', JSON.stringify(errorData, null, 2))
+        
+        // Handle validation errors from marshmallow
+        let errorMessage = 'Failed to update profile'
+        if (errorData.Message && typeof errorData.Message === 'object') {
+          // Convert validation errors to readable format
+          const validationErrors = Object.entries(errorData.Message)
+            .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
+            .join('; ')
+          errorMessage = `Validation errors: ${validationErrors}`
+        } else if (errorData.message || errorData.Message) {
+          errorMessage = errorData.message || errorData.Message
+        }
+        
+        throw new Error(errorMessage)
       }
       return response.json()
     })
@@ -117,14 +154,20 @@ function CustomerView() {
     })
     .catch(error => {
       console.error('Error updating profile:', error)
-      setUpdateError('Failed to update profile. Please try again.')
+      setUpdateError(error.message || 'Failed to update profile. Please try again.')
     })
   }
 
   // Cancel edit mode
   const handleCancel = () => {
     setEditMode(false)
-    setUpdatedInfo(customer) // Reset form to current values
+    setUpdatedInfo({
+      firstName: customer.firstName,
+      lastName: customer.lastName,
+      email: customer.email,
+      phone: customer.phone,
+      address: customer.address
+    }) // Reset form to current values
     setUpdateError('')
   }
 
@@ -202,7 +245,7 @@ function CustomerView() {
                 <input 
                   type="text"
                   name="firstName"
-                  value={updatedInfo.firstName}
+                  value={updatedInfo.firstName || ''}
                   onChange={handleChange}
                   required
                 />
@@ -213,7 +256,7 @@ function CustomerView() {
                 <input 
                   type="text"
                   name="lastName"
-                  value={updatedInfo.lastName}
+                  value={updatedInfo.lastName || ''}
                   onChange={handleChange}
                   required
                 />
@@ -224,7 +267,7 @@ function CustomerView() {
                 <input 
                   type="email"
                   name="email"
-                  value={updatedInfo.email}
+                  value={updatedInfo.email || ''}
                   disabled
                   className="disabled-input"
                 />
@@ -236,7 +279,7 @@ function CustomerView() {
                 <input 
                   type="tel"
                   name="phone"
-                  value={updatedInfo.phone}
+                  value={updatedInfo.phone || ''}
                   onChange={handleChange}
                   required
                 />
@@ -247,7 +290,7 @@ function CustomerView() {
                 <input 
                   type="text"
                   name="address"
-                  value={updatedInfo.address}
+                  value={updatedInfo.address || ''}
                   onChange={handleChange}
                   required
                 />

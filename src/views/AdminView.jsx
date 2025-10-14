@@ -1,14 +1,27 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { apiUrl } from '../lib/api'
+// import { apiUrl } from '../lib/api'  <-- removed usage; we will use buildUrl instead
 import './AdminView.css'
 
-// Use production API only in production mode; otherwise use dev proxy
-const apiBase = import.meta.env.MODE === 'production' ? import.meta.env.VITE_API_URL || '' : ''
-
-function AdminView(props) {
+function AdminView() {
   const navigate = useNavigate()
   const [errorMessage, setErrorMessage] = useState('')
+
+  // prevent duplicate concurrent fetches and repeated navigations
+  const isFetchingRef = useRef(false)
+  const fetchAbortRef = useRef(null)
+  const navigatedRef = useRef(false)
+
+  // Use dev proxy when in development; only call VITE_API_URL in production
+  const apiBase = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL || '')
+
+  // Helper to build URL: in dev use the Vite proxy (/api), in production call external API base
+  const buildUrl = React.useCallback((path) => {
+    if (!path.startsWith('/')) path = `/${path}`
+    return apiBase ? `${apiBase.replace(/\/$/, '')}${path}` : `/api${path}`
+  }, [apiBase])
+  // credentials: include for dev proxy (same-origin), omit for external API
+  const credentialsMode = apiBase ? 'omit' : 'include'
 
   // Admin profile state
   const [admin, setAdmin] = useState(null)
@@ -56,10 +69,13 @@ function AdminView(props) {
       return
     }
 
-    fetch(apiUrl('/mechanics/profile'), {
+    // { changed code }
+    fetch(buildUrl('/mechanics/profile'), {
       headers: {
-        'Authorization': `Bearer ${token}`
-      }
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      },
+      credentials: credentialsMode
     })
     .then(res => {
       if (!res.ok) {
@@ -90,31 +106,26 @@ function AdminView(props) {
       setError(err.message || 'Failed to load admin profile')
       setLoading(false)
     })
-  }, [navigate])
+  }, [navigate, buildUrl, credentialsMode])
 
   // Fetch all customers from the API (admin-only)
   const fetchCustomers = () => {
     setCustomersLoading(true)
     setCustomersError('')
     const token = localStorage.getItem('token')
-    
-    let urlStr
-    try {
-      urlStr = apiUrl('/customers')
-    } catch {
-      urlStr = '/api/customers'
-    }
 
+    const urlStr = buildUrl('/customers')
     fetch(urlStr, {
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      credentials: credentialsMode
     })
     .then(res => {
       if (!res.ok) {
         if (res.status === 401) {
-          // Token is invalid or expired
           localStorage.removeItem('token')
           localStorage.removeItem('userType')
           localStorage.removeItem('isAdmin')
@@ -147,11 +158,12 @@ function AdminView(props) {
     
     const token = localStorage.getItem('token')
     
-    fetch(apiUrl(`/customers/${customerId}`), {
+    fetch(buildUrl(`/customers/${customerId}`), {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`
-      }
+      },
+      credentials: credentialsMode
     })
     .then(res => {
       if (!res.ok) throw new Error('Failed to delete customer')
@@ -185,12 +197,13 @@ function AdminView(props) {
     setEditError('')
     const token = localStorage.getItem('token')
     
-    fetch(apiUrl(`/customers/${editingCustomer.id}`), {
+    fetch(buildUrl(`/customers/${editingCustomer.id}`), {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
+      credentials: credentialsMode,
       body: JSON.stringify(editForm)
     })
     .then(res => {
@@ -210,32 +223,55 @@ function AdminView(props) {
     })
   }
 
-  // Fetch all mechanics from the API (admin-only)
-  const fetchMechanics = async () => {
+  const fetchMechanics = React.useCallback(async () => {
+    if (isFetchingRef.current) return
+    isFetchingRef.current = true
+    setMechanicsLoading(true)
+
+    // abort any prior fetch
+    if (fetchAbortRef.current) {
+      try { fetchAbortRef.current.abort() } catch { /* ignore */ }
+    }
+    const abortController = new AbortController()
+    fetchAbortRef.current = abortController
+
     try {
       const token = localStorage.getItem('token')
-      const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' }
-      if (token) headers['Authorization'] = `Bearer ${token}`
+      if (!token) {
+        setErrorMessage('Not authenticated. Please login as an admin.')
+        if (!navigatedRef.current) {
+          navigatedRef.current = true
+          navigate('/login')
+        }
+        return
+      }
 
-      const url = apiBase ? `${apiBase.replace(/\/$/, '')}/mechanics` : '/api/mechanics'
-      // When using the dev proxy (relative URL), cookies can be included if needed by backend
-      const credentialsMode = apiBase ? 'omit' : 'include'
+      const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
 
-      const resp = await fetch(url, { headers, credentials: credentialsMode })
+      // { changed code } use buildUrl + credentialsMode
+      const url = buildUrl('/mechanics')
+
+      console.debug('AdminView.fetchMechanics', { mode: import.meta.env.MODE, url, credentialsMode, tokenTail: token ? token.slice(-8) : null })
+
+      const resp = await fetch(url, { headers, credentials: credentialsMode, signal: abortController.signal })
 
       if (!resp.ok) {
-        // Handle expired/invalid admin session
         if (resp.status === 401 || resp.status === 403) {
           localStorage.removeItem('token')
-          // localStorage.removeItem('user') // if you store additional auth data
-          const msg = 'Your admin session has expired. Please login again with an admin account.'
+          const msg = 'Your admin session has expired or you are not authorized. Please login again with an admin account.'
           console.warn('Mechanics fetch auth error:', resp.status, msg)
           setErrorMessage(msg)
-          navigate('/login')
+          if (!navigatedRef.current) {
+            navigatedRef.current = true
+            navigate('/login')
+          }
           return
         }
 
-        // Non-auth HTTP error: surface message
         const text = await resp.text().catch(() => resp.statusText || 'Unknown error')
         throw new Error(text || `Request failed with status ${resp.status}`)
       }
@@ -244,16 +280,18 @@ function AdminView(props) {
       setMechanics(data || [])
       setMechanicsLoading(false)
     } catch (err) {
-      // Network or parsing error
-      console.error('Mechanics fetch error:', err)
-      // show a user-friendly message if not already set by auth branch
-      if (!errorMessage) setErrorMessage(err.message || 'Failed to load mechanics.')
+      if (err.name === 'AbortError') {
+        console.debug('Mechanics fetch aborted')
+      } else {
+        console.error('Mechanics fetch error:', err)
+        if (!errorMessage) setErrorMessage(err.message || 'Failed to load mechanics.')
+      }
+    } finally {
+      isFetchingRef.current = false
+      fetchAbortRef.current = null
+      setMechanicsLoading(false)
     }
-  }
-
-  useEffect(() => {
-    fetchMechanics()
-  }, [])
+  }, [errorMessage, navigate, buildUrl, credentialsMode])
 
   // Delete a mechanic
   const deleteMechanic = (mechanicId) => {
@@ -262,22 +300,24 @@ function AdminView(props) {
     const token = localStorage.getItem('token')
     
     // Try with ID in path first, fallback to body if needed
-    fetch(apiUrl(`/mechanics/${mechanicId}`), {
+    fetch(buildUrl(`/mechanics/${mechanicId}`), {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
-      }
+      },
+      credentials: credentialsMode
     })
     .then(res => {
       if (!res.ok) {
         // If path-based delete fails, try body-based delete as fallback
-        return fetch(apiUrl('/mechanics'), {
+        return fetch(buildUrl('/mechanics'), {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
+          credentials: credentialsMode,
           body: JSON.stringify({ id: mechanicId })
         })
       }
@@ -324,23 +364,25 @@ function AdminView(props) {
     }
     
     // Try with ID in path first, fallback to body-only if needed
-    fetch(apiUrl(`/mechanics/${editingMechanic.id}`), {
+    fetch(buildUrl(`/mechanics/${editingMechanic.id}`), {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
+      credentials: credentialsMode,
       body: JSON.stringify(mechanicEditForm)
     })
     .then(res => {
       if (!res.ok && res.status === 404) {
         // If path-based update fails, try body-based update as fallback
-        return fetch(apiUrl('/mechanics'), {
+        return fetch(buildUrl('/mechanics'), {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
+          credentials: credentialsMode,
           body: JSON.stringify(updateData)
         })
       }

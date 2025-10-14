@@ -1,141 +1,149 @@
 import React, { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import './LoginView.css'
-import { apiUrl } from '../lib/api'
 
-// Use production API only in production mode; in dev use the dev proxy
-const apiBase = import.meta.env.MODE === 'production' ? import.meta.env.VITE_API_URL || '' : ''
+// Use dev proxy when in development; only call VITE_API_URL in production
+const apiBase = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL || '')
+const buildUrl = (path) => {
+  if (!path.startsWith('/')) path = `/${path}`
+  return apiBase ? `${apiBase.replace(/\/$/, '')}${path}` : `/api${path}`
+}
+const credentialsMode = apiBase ? 'omit' : 'include'
 
 function LoginView() {
   // Make variables for form data
-  const [email, setEmail] = useState('')
+  const [emailOrUsername, setEmailOrUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [userType, setUserType] = useState('customer')
   const [errorMessage, setErrorMessage] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [userType, setUserType] = useState('mechanic')
   const navigate = useNavigate()
 
   // Function that runs when form is submitted
-  async function handleSubmit(e) {
+  async function handleSubmit(event) {
     // Stop the page from refreshing
-    e.preventDefault()
-    
-    setError('')
-    setSuccess('')
-    setLoading(true)
+    event.preventDefault()
+    setErrorMessage('')
 
-    // Check if form is filled
-    if (email === "" || password === "") {
-      setError("Please fill all fields")
-      setLoading(false)
+    const rawId = (emailOrUsername || '').trim()
+    const rawPassword = (password || '').trim()
+
+    if (!rawId) {
+      setErrorMessage('Please enter your email or username.')
       return
     }
-    
-    // Try to log in
-    const loginData = {
-      email: email,
-      password: password
+    if (!rawPassword) {
+      setErrorMessage('Please enter your password.')
+      return
     }
 
-    try {
-      // Build request URL: production-only apiBase, otherwise dev proxy
-      const url = apiBase ? `${apiBase.replace(/\/$/, '')}/mechanics/login` : '/api/mechanics/login'
+    // Build payload: prefer email when input looks like an email, otherwise send username
+    const payload = { password: rawPassword }
+    if (rawId.includes('@')) {
+      payload.email = rawId
+    } else {
+      payload.username = rawId
+    }
 
-      // Only include cookies when using the dev proxy (same-origin); omit for external API
-      const credentialsMode = apiBase ? 'omit' : 'include'
+    setLoading(true)
+    try {
+      const url = buildUrl('/mechanics/login')
+      // Debug outgoing request
+      console.debug('Login request ->', { url, payload, credentials: credentialsMode })
 
       const resp = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         credentials: credentialsMode,
-        body: JSON.stringify(loginData)
+        body: JSON.stringify(payload)
       })
 
+      // Try to parse structured JSON first, otherwise text
+      let serverBody = null
+      try {
+        serverBody = await resp.clone().json()
+      } catch {
+        try {
+          serverBody = await resp.clone().text()
+        } catch {
+          serverBody = null
+        }
+      }
+
+      console.error && console.error('Login failed response:', { status: resp.status, body: serverBody })
+
       if (!resp.ok) {
-        // Handle common auth errors with friendly messages
+        // Provide clear messages for common auth errors
+        if (resp.status === 400) {
+          const msg = serverBody && (serverBody.message || serverBody.error) || 'Bad request - please check your input.'
+          setErrorMessage(msg)
+          return
+        }
         if (resp.status === 401) {
           setErrorMessage('Invalid credentials. Please try again.')
           return
         }
         if (resp.status === 403) {
-          // Distinguish between missing permissions vs server rejecting cross-origin requests
-          const msg = apiBase
-            ? 'Access forbidden by the production API (403). If this should work locally, run the dev server without VITE_API_URL so the proxy is used, or check backend CORS/auth settings.'
-            : 'Forbidden. Your account is not authorized.'
-          setErrorMessage(msg)
+          setErrorMessage('Forbidden. Your account is not authorized.')
           return
         }
-        const errText = await resp.text().catch(() => '')
-        throw new Error(errText || `Login failed with status ${resp.status}`)
+
+        const serverMsg = serverBody && (serverBody.message || JSON.stringify(serverBody)) || `Login failed with status ${resp.status}`
+        setErrorMessage(serverMsg)
+        return
       }
 
       const data = await resp.json()
+      const token = data?.token || data?.access_token
+      if (!token) {
+        console.error('Login succeeded but no token in response:', data)
+        setErrorMessage('Login succeeded but no token was returned by the server.')
+        return
+      }
 
-      if (data.token) {
-        // Save login info
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('userType', userType)
+      // Persist token immediately
+      localStorage.setItem('token', token)
 
-        // Tell other components we logged in
+      // Fetch profile to determine role/is_admin and persist userType/isAdmin for AdminView
+      try {
+        const profileResp = await fetch(buildUrl('/mechanics/profile'), {
+          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+          credentials: credentialsMode
+        })
+
+        let profileBody = null
+        try { profileBody = await profileResp.json() } catch { profileBody = null }
+
+        if (!profileResp.ok) {
+          console.error('Profile fetch failed after login:', { status: profileResp.status, body: profileBody })
+          // Clear token if profile can't be fetched/auth fails
+          localStorage.removeItem('token')
+          setErrorMessage(profileBody?.message || 'Failed to verify profile after login.')
+          return
+        }
+
+        // Determine user type and admin flag
+        const isAdmin = !!(profileBody?.is_admin || profileBody?.isAdmin)
+        const role = isAdmin ? 'admin' : 'mechanic'
+        localStorage.setItem('userType', role)
+        localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false')
+        // notify other parts of the app
         window.dispatchEvent(new Event('login-status-change'))
 
-        // Show success message
-        setSuccess('Login successful!')
+        // Navigate: go to admin dashboard if admin, otherwise home
+        if (isAdmin) navigate('/admin')
+        else navigate('/')
 
-        // If mechanic, fetch profile to check admin flag and redirect accordingly
-        if (userType === 'mechanic') {
-            fetch(apiUrl('/mechanics/profile'), {
-            headers: {
-              'Authorization': `Bearer ${data.token}`
-            }
-          })
-          .then(res => {
-            if (!res.ok) {
-              console.error('Profile fetch failed:', res.status, res.statusText)
-              throw new Error(`Profile fetch failed: ${res.status} ${res.statusText}`)
-            }
-            return res.json()
-          })
-          .then(profile => {
-            const isAdmin = profile?.is_admin || profile?.isAdmin || false
-            // persist admin flag for NavBar and other components
-            if (isAdmin) {
-              localStorage.setItem('isAdmin', 'true')
-            } else {
-              localStorage.removeItem('isAdmin')
-            }
-            
-            // Notify NavBar and other components about the login status change
-            window.dispatchEvent(new Event('login-status-change'))
-            
-            // Navigate based on admin status
-            if (isAdmin) {
-              navigate('/admin')
-            } else {
-              navigate('/mechanic')
-            }
-          })
-          .catch((err) => {
-            // If profile fetch fails for any reason, fall back to mechanic dashboard
-            console.error('Profile fetch error after login:', err)
-            localStorage.removeItem('isAdmin')
-            // Notify NavBar about the status change even if profile fetch fails
-            window.dispatchEvent(new Event('login-status-change'))
-            navigate('/mechanic')
-          })
-        } else {
-          // Customer goes to customer dashboard
-          navigate('/customer')
-        }
-      } else {
-        setError('Login failed - invalid credentials')
+      } catch (profileErr) {
+        console.error('Error fetching profile after login:', profileErr)
+        // Keep token but surface error
+        setErrorMessage('Logged in but failed to fetch profile. Try refreshing or logging in again.')
+        return
       }
-      setLoading(false)
     } catch (err) {
-      console.error('Login error:', err)
+      console.error('Login error (network/other):', err)
       setErrorMessage(err.message || 'Network error during login.')
+    } finally {
       setLoading(false)
     }
   }
@@ -150,8 +158,6 @@ function LoginView() {
           </div>
 
           <form onSubmit={handleSubmit} className="login-form">
-            {error && <div className="alert alert-error">{error}</div>}
-            {success && <div className="alert alert-success">{success}</div>}
             {errorMessage && <div className="error">{errorMessage}</div>}
 
             <div className="user-type-switch">
@@ -172,12 +178,12 @@ function LoginView() {
             </div>
 
             <div className="form-group">
-              <label>Email</label>
+              <label>Email or Username</label>
               <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="Enter your email"
+                type="text"
+                value={emailOrUsername}
+                onChange={e => setEmailOrUsername(e.target.value)}
+                placeholder="Enter your email or username"
                 required
               />
             </div>

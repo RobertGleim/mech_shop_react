@@ -232,6 +232,15 @@ function CustomerView() {
                 </button>
                 <button className="customer-btn">View History</button>
               </div>
+
+              <div className="profile-info-note">
+                <p className="profile-note-title">📝 Profile Information is Read-Only</p>
+                <small className="profile-note-text">
+                  For security reasons, profile updates are managed by administration. 
+                  If you need to change your personal information, please contact your manager 
+                  or HR department.
+                </small>
+              </div>
             </>
           ) : (
             // Edit Mode

@@ -1,199 +1,106 @@
 import React, { useState } from 'react'
-import './RegisterView.css'
+import { useNavigate } from 'react-router-dom'
+import './RegisterView.css' // register uses its own styles to match card look
 import { apiUrl } from '../lib/api'
 
-function RegisterView() {
-  // Form state
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+export default function RegisterView() {
+  const navigate = useNavigate()
+  const [form, setForm] = useState({
+    first_name: '',
+    last_name: '',
     email: '',
     password: '',
-    userType: 'customer',
-    salary: '',
+    phone: '',
     address: ''
   })
-  const [message, setMessage] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
 
-  // Handle input changes
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData({
-      ...formData,
-      [name]: value
-    })
+  const handleChange = (e) => {
+    setForm({...form, [e.target.name]: e.target.value})
   }
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
-    // Validate form
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
-      setMessage('Please fill all required fields')
-      return
-    }
-    
-    setIsLoading(true)
-    
+    setError('')
+    setLoading(true)
     try {
-      const endpoint = formData.userType === 'customer'
-        ? apiUrl('/customers')
-        : apiUrl('/mechanics')
-
-      const payload = {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        email: formData.email,
-        password: formData.password
-      }
-
-      // Include mechanic-specific required fields
-      if (formData.userType === 'mechanic') {
-        payload.salary = parseFloat(formData.salary) || 0
-        payload.address = formData.address
-      }
-
-      const response = await fetch(endpoint, {
+      const resp = await fetch(apiUrl('/customers/'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(form)
       })
-      
-      const data = await response.json()
-      
-      // Many backends return the created resource or a 201 status. Treat non-2xx as failure.
-      if (response.status === 201 || data.id) {
-        setMessage('Registration successful! Please login.')
-        setFormData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          password: '',
-          userType: 'customer',
-          salary: '',
-          address: ''
-        })
-        
-        // Redirect to login page after successful registration
-        setTimeout(() => {
-          window.location.href = '/login'
-        }, 2000)
-      } else {
-        setMessage(`Registration failed: ${data.message}`)
+      const body = await resp.json().catch(()=>null)
+      if (!resp.ok) {
+        // body may be validation messages or message field
+        const msg = body && (body.message || JSON.stringify(body)) || `Failed (${resp.status})`
+        setError(msg)
+        setLoading(false)
+        return
       }
-    } catch (error) {
-      setMessage(`Error: ${error.message}`)
-    } finally {
-      setIsLoading(false)
+      setSuccess(true)
+      setLoading(false)
+      // optionally redirect to login after a short delay
+      setTimeout(() => navigate('/login'), 1200)
+    } catch (err) {
+      setError(err.message || 'Network error')
+      setLoading(false)
     }
   }
-  
+
   return (
-    <div className="register-page">
-      <h1>Register</h1>
-      
-      {message && <div className="message">{message}</div>}
-      
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="firstName">First Name</label>
-          <input 
-            type="text"
-            id="firstName"
-            name="firstName"
-            value={formData.firstName}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="lastName">Last Name</label>
-          <input 
-            type="text"
-            id="lastName"
-            name="lastName"
-            value={formData.lastName}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="email">Email</label>
-          <input 
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="password">Password</label>
-          <input 
-            type="password"
-            id="password"
-            name="password"
-            value={formData.password}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="userType">I am a</label>
-          <select 
-            id="userType"
-            name="userType"
-            value={formData.userType}
-            onChange={handleInputChange}
-          >
-            <option value="customer">Customer</option>
-            <option value="mechanic">Mechanic</option>
-          </select>
-        </div>
+    <div className="contact-container">
+      <div className="contact-wrapper">
+        <div className="contact-card">
+          <h3>Create an Account</h3>
 
-        {formData.userType === 'mechanic' && (
-          <>
-            <div className="form-group">
-              <label htmlFor="salary">Salary</label>
-              <input
-                type="number"
-                id="salary"
-                name="salary"
-                value={formData.salary}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
+          {success ? (
+            <div className="success-message">Account created. Redirecting to login...</div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              {error && <div className="error-message" style={{marginBottom:12}}>{error}</div>}
+              <div className="form-row">
+                <div className="form-group">
+                  <label>First Name</label>
+                  <input name="first_name" value={form.first_name} onChange={handleChange} required />
+                </div>
+                <div className="form-group">
+                  <label>Last Name</label>
+                  <input name="last_name" value={form.last_name} onChange={handleChange} required />
+                </div>
+              </div>
 
-            <div className="form-group">
-              <label htmlFor="address">Address</label>
-              <input
-                type="text"
-                id="address"
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-          </>
-        )}
-        
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Registering...' : 'Register'}
-        </button>
-      </form>
+              <div className="form-group">
+                <label>Email</label>
+                <input name="email" type="email" value={form.email} onChange={handleChange} required />
+              </div>
+
+              <div className="form-group">
+                <label>Password</label>
+                <input name="password" type="password" value={form.password} onChange={handleChange} required />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Phone</label>
+                  <input name="phone" value={form.phone} onChange={handleChange} />
+                </div>
+                <div className="form-group">
+                  <label>Address</label>
+                  <input name="address" value={form.address} onChange={handleChange} />
+                </div>
+              </div>
+
+              <div style={{marginTop:12}}>
+                <button type="submit" disabled={loading}>
+                  {loading ? 'Creating...' : 'Create Account'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
-
-export default RegisterView

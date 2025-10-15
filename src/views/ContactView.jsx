@@ -74,19 +74,20 @@ const ContactView = () => {
   return (
     <div className="contact-container">
       <div className="contact-wrapper">
-        <div className="contact-header">
-          <h1>Contact Us</h1>
-          <h2>{customerData ? 'Schedule Your Service' : 'Get in touch with our team'}</h2>
-        </div>
-        
-        {/* Show success message or form based on submission status */}
-        {success ? (
-          <div className="success-message">
-            <h3>Thank you for contacting us!</h3>
-            <p>We have received your message and will get back to you shortly.</p>
+        {/* single centered card that contains the header and either success or the form */}
+        <div className="contact-card">
+          <div className="card-header">
+            <h1>Contact Us</h1>
+            <h2>{customerData ? 'Schedule Your Service' : 'Get in touch with our team'}</h2>
           </div>
-        ) : (
-          <div className="contact-card">
+          
+          {/* Show success message or form based on submission status */}
+          {success ? (
+            <div className="success-message">
+              <h3>Thank you for contacting us!</h3>
+              <p>We have received your message and will get back to you shortly.</p>
+            </div>
+          ) : (
             <form onSubmit={handleSubmit} className="contact-form">
               {/* Show error message if there is one */}
               {error && <div className="error-message">{error}</div>}
@@ -178,8 +179,8 @@ const ContactView = () => {
                 {loading ? 'Sending...' : customerData ? 'Schedule Service' : 'Send Message'}
               </button>
             </form>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )

@@ -75,6 +75,64 @@
   border-color: #a0d8f8;
 }
 
+/* Profile note — dark themed card with highlighted accent border */
+.profile-info-note {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #262626 0%, #232323 100%);
+  border: 1px solid rgba(160, 216, 248, 0.08); /* subtle border to match theme */
+  box-shadow: 0 8px 20px rgba(0,0,0,0.55);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Left accent stripe to highlight the note */
+.profile-info-note::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: linear-gradient(180deg, #a0d8f8, #6fb8e8);
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
+
+/* Ensure content has space from the accent stripe */
+.profile-info-note > * {
+  position: relative;
+  margin-left: 10px;
+}
+
+/* Title style (accent color) */
+.profile-note-title {
+  margin: 0 0 8px 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #a0d8f8;
+  line-height: 1.2;
+}
+
+/* Descriptive text style */
+.profile-note-text {
+  margin: 0;
+  color: #cfcfcf;
+  font-style: italic;
+  line-height: 1.5;
+  display: block;
+  font-size: 0.95rem;
+}
+
+/* Slight responsive tweak */
+@media (max-width: 700px) {
+  .profile-info-note { padding: 12px; }
+  .profile-info-note::before { width: 5px; }
+  .profile-note-title { font-size: 0.95rem; }
+  .profile-note-text { font-size: 0.9rem; }
+}
+
 @media (max-width: 768px) {
   .customer-container {
     padding: 20px 15px;

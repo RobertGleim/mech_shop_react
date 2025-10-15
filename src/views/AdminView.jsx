@@ -19,31 +19,35 @@ function AdminView() {
 
   // Helper to read token from multiple possible places and keys
   const getAuthToken = () => {
-    // Common keys to check
-    const keys = ['token', 'access_token', 'authToken', 'Authorization']
-    for (const k of keys) {
-      try {
-        const v = localStorage.getItem(k)
-        if (v) return v
-      } catch { /* ignore */ }
-      try {
-        const v = sessionStorage.getItem(k)
-        if (v) return v
-      } catch { /* ignore */ }
+    // Always check 'token' first
+    let token = null;
+    try { token = localStorage.getItem('token'); } catch {
+      // Ignore errors reading localStorage
     }
-
-    // Try cookie named 'token' or 'authToken'
-    const cookieMatch = document.cookie.match(/(?:^|;\s*)(?:token|authToken)=([^;]+)/)
-    if (cookieMatch) return decodeURIComponent(cookieMatch[1])
-
+    if (!token) try { token = sessionStorage.getItem('token'); } catch { /* Ignore errors reading sessionStorage */ }
+    if (!token) {
+      // Try cookie named 'token'
+      const cookieMatch = document.cookie.match(/(?:^|;\s*)token=([^;]+)/);
+      if (cookieMatch) token = decodeURIComponent(cookieMatch[1]);
+    }
+    // Fallback to other keys if still not found
+    if (!token) {
+      const keys = ['access_token', 'authToken', 'Authorization'];
+      for (const k of keys) {
+        try { token = localStorage.getItem(k); if (token) break; } catch { /* ignore error */ }
+        try { token = sessionStorage.getItem(k); if (token) break; } catch { /* ignore error */ }
+      }
+    }
     // Try URL query param ?token=...
-    try {
-      const urlParams = new URLSearchParams(window.location.search)
-      const t = urlParams.get('token') || urlParams.get('access_token')
-      if (t) return t
-    } catch { /* ignore */ }
-
-    return null
+    if (!token) {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        token = urlParams.get('token') || urlParams.get('access_token');
+      } catch {
+        // Ignore errors reading localStorage
+      }
+    }
+    return token;
   }
 
   // Unified fetch wrapper: always set Authorization header; if calling external API (apiBase set),
@@ -188,11 +192,20 @@ function AdminView() {
       return
     }
 
-    fetchWithAuth('/customers')
+    // Use trailing slash to avoid Flask redirect that can drop Authorization header
+    fetchWithAuth('/customers/')
     .then(async res => {
+      // Always try to parse JSON for debugging
+      let parsed = null
+      try {
+        parsed = await res.clone().json()
+      } catch (e) {
+        try { parsed = await res.clone().text() } catch { parsed = null }
+      }
+      console.debug('fetchCustomers: response status', res.status, 'parsed body:', parsed)
+
       if (!res.ok) {
-        let errBody = null
-        try { errBody = await res.json() } catch { try { errBody = await res.text() } catch { /* ignore error */ } }
+        let errBody = parsed
         if (res.status === 401) {
           localStorage.removeItem('token')
           localStorage.removeItem('userType')
@@ -206,10 +219,32 @@ function AdminView() {
         }
         throw new Error(errBody?.message || `HTTP ${res.status}: ${res.statusText}`)
       }
-      return res.json()
+      // Return parsed JSON for next then()
+      return parsed
     })
     .then(data => {
-      setCustomers(data.customers || data || [])
+      // Normalize multiple possible shapes:
+      // 1) array: [...customers]
+      // 2) object with key: { customers: [...] }
+      // 3) object with nested: { customers: { data: [...] } }
+      let list = []
+      if (!data) {
+        list = []
+      } else if (Array.isArray(data)) {
+        list = data
+      } else if (data.customers) {
+        if (Array.isArray(data.customers)) list = data.customers
+        else if (data.customers.data && Array.isArray(data.customers.data)) list = data.customers.data
+      } else if (data.data && Array.isArray(data.data)) {
+        // in case some serializers wrap results in data
+        list = data.data
+      } else {
+        // fallback: if object but not array, try to coerce values
+        list = Array.isArray(data) ? data : []
+      }
+
+      console.debug('fetchCustomers: normalized list length', list.length)
+      setCustomers(list)
       setCustomersLoading(false)
     })
     .catch((err) => {
@@ -312,7 +347,8 @@ function AdminView() {
         return
       }
 
-      const resp = await fetchWithAuth('/mechanics', { signal: abortController.signal })
+      // changed: request collection with trailing slash to avoid redirects
+      const resp = await fetchWithAuth('/mechanics/', { signal: abortController.signal })
 
       if (!resp.ok) {
         if (resp.status === 401 || resp.status === 403) {
@@ -356,7 +392,7 @@ function AdminView() {
     .then(res => {
       if (!res.ok) {
         // If path-based delete fails, try body-based delete as fallback
-        return fetchWithAuth('/mechanics', {
+        return fetchWithAuth('/mechanics/', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: mechanicId })
@@ -407,7 +443,7 @@ function AdminView() {
     .then(res => {
       if (!res.ok && res.status === 404) {
         // If path-based update fails, try body-based update as fallback
-        return fetchWithAuth('/mechanics', {
+        return fetchWithAuth('/mechanics/', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updateData)

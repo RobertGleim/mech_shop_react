@@ -107,7 +107,7 @@ function CustomerView() {
 
     
   // Send update request to API
-  fetch(apiUrl('/customers'), {
+  fetch(apiUrl('/customers/'), {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

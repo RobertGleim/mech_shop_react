@@ -48,7 +48,9 @@ function LoginView() {
     setLoading(true)
 
     try {
-      const url = buildUrl('/mechanics/login')
+      // Choose endpoint based on selected user type
+      const endpoint = userType === 'customer' ? '/customers/login' : '/mechanics/login'
+      const url = buildUrl(endpoint)
       console.debug('Login request ->', { url, payload, credentials: credentialsMode })
 
       const resp = await fetch(url, {
@@ -101,15 +103,24 @@ function LoginView() {
 
       // Persist user metadata for role checks
       if (typeof data.id !== 'undefined') localStorage.setItem('userId', String(data.id))
-      const isAdmin = !!data.is_admin
-      localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false')
-      localStorage.setItem('userType', isAdmin ? 'admin' : 'mechanic')
+
+      if (userType === 'customer') {
+        // customer login path: mark as customer
+        localStorage.setItem('isAdmin', 'false')
+        localStorage.setItem('userType', 'customer')
+      } else {
+        // mechanic login path: use is_admin flag if present, otherwise default to mechanic
+        const isAdmin = !!data.is_admin
+        localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false')
+        localStorage.setItem('userType', isAdmin ? 'admin' : 'mechanic')
+      }
 
       // Notify other parts of the app (AdminView listens for this)
       window.dispatchEvent(new Event('login-status-change'))
 
       // Navigate to appropriate page
-      if (isAdmin) navigate('/admin')
+      if (localStorage.getItem('userType') === 'admin') navigate('/admin')
+      else if (localStorage.getItem('userType') === 'customer') navigate('/')
       else navigate('/')
     } catch (err) {
       console.error('Login error (network/other):', err)

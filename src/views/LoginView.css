@@ -170,54 +170,56 @@
 
 .user-type-switch {
     display: flex;
+    gap: 12px;
     margin-bottom: 24px;
-    border: 2px solid #3D3D3D;
-    border-radius: 8px;
-    overflow: hidden;
-    background-color: #121212;
+    justify-content: center;
+    align-items: center;
+
+    /* make container match card and feel recessed */
+    background: #2C2C2C; /* same as .login-card */
+    padding: 8px;                 /* slightly larger padding to contain button shadows */
+    border-radius: 10px;
+    border: none;
+    box-shadow: inset 0 4px 10px rgba(0,0,0,0.6);
+    overflow: visible;            /* allow button shadows to be visible without clipping */
 }
 
+/* buttons sit inside the recessed container */
 .switch-btn {
-    flex: 1;
-    padding: 12px 16px;
-    background-color: #121212;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 18px;
+    min-width: 90px;             /* consistent button width so they sit nicely inside box */
+    background: transparent;
     color: #B0B0B0;
     border: none;
+    border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
+    transition: box-shadow 0.12s ease, color 0.12s ease, background 0.12s ease;
+
+    /* default: inset (pressed) look */
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.7);
+    margin: 0;
+    box-sizing: border-box;
 }
 
-.switch-btn:first-child {
-    border-right: 1px solid #3D3D3D;
-}
-
+/* Active button: outset (raised) appearance using shadow only (no translate) */
 .switch-btn.active {
-    background: linear-gradient(135deg, #2C2C2C 0%, #3D3D3D 100%);
     color: #F5F5F5;
-    border-color: #a0d8f8;
+    background: linear-gradient(135deg, #323232 0%, #3f3f3f 100%);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.6), 0 -1px 0 rgba(255,255,255,0.03) inset;
+    /* no transform: keep button within container bounds */
 }
 
+/* hover on non-active slightly change inset (no translate) */
 .switch-btn:hover:not(.active) {
-    background-color: #1F1F1F;
+    background-color: transparent;
     color: #F5F5F5;
-    transform: translateY(-1px);
-}
-
-.switch-btn:active {
-    transform: translateY(0);
-}
-
-.switch-btn.active::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(135deg, #F5F5F5 0%, #a0d8f8 100%);
+    box-shadow: inset 0 3px 8px rgba(0,0,0,0.75);
 }
 
 /* Responsive Design */

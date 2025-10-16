@@ -112,10 +112,12 @@ function AdminView() {
   const [editingCustomer, setEditingCustomer] = useState(null)
   const [editForm, setEditForm] = useState({ first_name: '', last_name: '', phone: '', address: '' })
 
-  // Hide customers list
+
   const hideCustomers = () => setShowCustomers(false)
   const [editLoading, setEditLoading] = useState(false)
-  const [setEditError] = useState('')
+  
+  // eslint-disable-next-line no-unused-vars
+  const [editError, setEditError] = useState('')
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   
   // Mechanics state
@@ -132,7 +134,8 @@ function AdminView() {
     is_admin: false 
   })
   const [mechanicEditLoading, setMechanicEditLoading] = useState(false)
-  const [setMechanicEditError] = useState('')
+  // eslint-disable-next-line no-unused-vars
+  const [mechanicEditError, setMechanicEditError] = useState('')
   const [selectedMechanic, setSelectedMechanic] = useState(null)
 
   // Mechanics visibility control (mirror customers behaviour)
@@ -358,46 +361,46 @@ function AdminView() {
   }
 
   // Update a customer
-  const updateCustomer = () => {
+  const updateCustomer = async () => {
     if (!editingCustomer) return
     
     setEditLoading(true)
     setEditError('')
-
-    const token = getAuthToken()
-    if (!token) {
-      setEditError('Not authenticated. Please login.')
-      setEditLoading(false)
-      return
-    }
-
-    fetchWithAuth(`/customers/${editingCustomer.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editForm)
-    })
-    .then(async res => {
-      // parse body (JSON preferred, fallback to text)
-      let body = null
-      try { body = await res.clone().json() } catch { body = await res.clone().text().catch(()=>null) }
+    try {
+      const res = await fetchWithAuth(`/customers/${editingCustomer.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm)
+      })
+      let parsed = null
+      try { parsed = await res.json() } catch { parsed = await res.text().catch(()=>null) }
       if (!res.ok) {
-        const msg = (body && (body.message || (typeof body === 'string' ? body : null))) || `HTTP ${res.status}`
+        const msg = (parsed && (parsed.message || (typeof parsed === 'string' ? parsed : null))) || `HTTP ${res.status}`
         throw new Error(msg)
       }
-      return body
-    })
-    .then(updatedCustomer => {
-      // API may return full object or serialized; handle both
-      const customerObj = updatedCustomer && typeof updatedCustomer === 'object' ? updatedCustomer : editingCustomer
+      // Normalize response to a customer object
+      let customerObj = null
+      if (!parsed) {
+        customerObj = { ...editingCustomer, ...editForm }
+      } else if (Array.isArray(parsed)) {
+        customerObj = parsed.find(c => c.id === editingCustomer.id) || parsed[0] || { ...editingCustomer, ...editForm }
+      } else if (parsed.customer) {
+        customerObj = parsed.customer
+      } else if (parsed.data && typeof parsed.data === 'object') {
+        customerObj = parsed.data.id ? parsed.data : { ...editingCustomer, ...editForm }
+      } else {
+        customerObj = parsed
+      }
+      // Ensure id remains correct when API returns partial
+      if (!customerObj.id) customerObj.id = editingCustomer.id
       setCustomers(prev => prev.map(c => c.id === editingCustomer.id ? customerObj : c))
       setSelectedCustomer(customerObj)
       setEditingCustomer(null)
+    } catch (err) {
+      setEditError(`Failed to update customer: ${err.message || err}`)
+    } finally {
       setEditLoading(false)
-    })
-    .catch(err => {
-      setEditError(`Failed to update customer: ${err.message}`)
-      setEditLoading(false)
-    })
+    }
   }
 
   const fetchMechanics = React.useCallback(async () => {
@@ -504,45 +507,47 @@ function AdminView() {
   }
 
   // Update a mechanic
-  const updateMechanic = () => {
+  const updateMechanic = async () => {
     if (!editingMechanic) return
     
     setMechanicEditLoading(true)
     setMechanicEditError('')
-
-    const updateData = { ...mechanicEditForm, id: editingMechanic.id }
-
-    fetchWithAuth(`/mechanics/${editingMechanic.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(mechanicEditForm)
-    })
-    .then(res => {
-      if (!res.ok && res.status === 404) {
-        // If path-based update fails, try body-based update as fallback
-        return fetchWithAuth('/mechanics/', {
+    try {
+      // First try path-based update
+      let resp = await fetchWithAuth(`/mechanics/${editingMechanic.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mechanicEditForm)
+      })
+      // If not found, fallback to body-based update
+      if (!resp.ok && resp.status === 404) {
+        resp = await fetchWithAuth('/mechanics/', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updateData)
+          body: JSON.stringify({ ...mechanicEditForm, id: editingMechanic.id })
         })
       }
-      return res
-    })
-    .then(res => {
-      if (!res.ok) throw new Error('Failed to update mechanic')
-      return res.json()
-    })
-    .then(updatedMechanic => {
-      // update list and currently selected mechanic in-place so UI reflects changes immediately
-      setMechanics(prev => prev.map(m => m.id === editingMechanic.id ? updatedMechanic : m))
-      setSelectedMechanic(updatedMechanic)
+      let parsed = null
+      try { parsed = await resp.json() } catch { parsed = await resp.text().catch(()=>null) }
+      if (!resp.ok) {
+        const msg = (parsed && (parsed.message || (typeof parsed === 'string' ? parsed : JSON.stringify(parsed)))) || `HTTP ${resp.status}`
+        throw new Error(msg)
+      }
+      // Normalize updated mechanic object
+      let mechObj = null
+      if (!parsed) mechObj = { ...editingMechanic, ...mechanicEditForm }
+      else if (parsed.mechanic) mechObj = parsed.mechanic
+      else if (parsed.data && typeof parsed.data === 'object') mechObj = parsed.data.id ? parsed.data : { ...editingMechanic, ...mechanicEditForm }
+      else mechObj = parsed
+      if (!mechObj.id) mechObj.id = editingMechanic.id
+      setMechanics(prev => prev.map(m => m.id === editingMechanic.id ? mechObj : m))
+      setSelectedMechanic(mechObj)
       setEditingMechanic(null)
+    } catch (err) {
+      setMechanicEditError(`Failed to update mechanic: ${err.message || err}`)
+    } finally {
       setMechanicEditLoading(false)
-    })
-    .catch(err => {
-      setMechanicEditError(`Failed to update mechanic: ${err.message}`)
-      setMechanicEditLoading(false)
-    })
+    }
   }
 
   // Create mechanic (admin-only)

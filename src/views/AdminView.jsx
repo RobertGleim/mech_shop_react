@@ -17,7 +17,8 @@ function AdminView() {
     },
     [apiBase]
   );
-  const credentialsMode = apiBase ? "omit" : "include";
+  // Always include credentials so cookie-based sessions are sent (prevents 403 when backend expects cookies)
+  const credentialsMode = "include";
 
   const getAuthToken = () => {
     // Always check 'token' first
@@ -85,17 +86,7 @@ function AdminView() {
 
       let url = buildUrl(path);
 
-      if (apiBase) {
-        try {
-          const urlObj = new URL(url);
-          if (!urlObj.searchParams.get("token")) {
-            urlObj.searchParams.set("token", token);
-            url = urlObj.toString();
-          }
-        } catch {
-          console.debug("fetchWithAuth: could not append token param");
-        }
-      }
+      // Do not append token to the URL. Rely on Authorization header and cookies (safer and avoids backend mismatches).
 
       const fetchOpts = Object.assign({}, opts, {
         headers,
@@ -112,7 +103,7 @@ function AdminView() {
 
       return fetch(url, fetchOpts);
     },
-    [apiBase, credentialsMode, navigate, buildUrl]
+    [credentialsMode, navigate, buildUrl]
   );
 
   const [admin, setAdmin] = useState(null);
@@ -374,7 +365,10 @@ function AdminView() {
         return res.json();
       })
       .then(() => {
-        setCustomers(customers.filter((c) => c.id !== customerId));
+        // normalize id comparison to avoid number/string mismatch (e.g. "1" vs 1)
+        setCustomers((prev) =>
+          (prev || []).filter((c) => String(c.id) !== String(customerId))
+        );
       })
       .catch((err) => {
         setCustomersError(`Failed to delete customer: ${err.message}`);
@@ -435,8 +429,11 @@ function AdminView() {
       }
 
       if (!customerObj.id) customerObj.id = editingCustomer.id;
+      // normalize id equality when updating list
       setCustomers((prev) =>
-        prev.map((c) => (c.id === editingCustomer.id ? customerObj : c))
+        (prev || []).map((c) =>
+          String(c.id) === String(editingCustomer.id) ? customerObj : c
+        )
       );
       setSelectedCustomer(customerObj);
       setEditingCustomer(null);
@@ -536,7 +533,10 @@ function AdminView() {
         return res.json();
       })
       .then(() => {
-        setMechanics(mechanics.filter((m) => m.id !== mechanicId));
+        // normalize id comparison to avoid number/string mismatch
+        setMechanics((prev) =>
+          (prev || []).filter((m) => String(m.id) !== String(mechanicId))
+        );
       })
       .catch((err) => {
         setMechanicsError(`Failed to delete mechanic: ${err.message}`);
@@ -601,8 +601,11 @@ function AdminView() {
           : { ...editingMechanic, ...mechanicEditForm };
       else mechObj = parsed;
       if (!mechObj.id) mechObj.id = editingMechanic.id;
+      // normalize id equality when updating list
       setMechanics((prev) =>
-        prev.map((m) => (m.id === editingMechanic.id ? mechObj : m))
+        (prev || []).map((m) =>
+          String(m.id) === String(editingMechanic.id) ? mechObj : m
+        )
       );
       setSelectedMechanic(mechObj);
       setEditingMechanic(null);
@@ -938,7 +941,7 @@ function AdminView() {
                       </div>
                       <div className="detail-body">
                         {editingCustomer &&
-                        editingCustomer.id === selectedCustomer.id ? (
+                        String(editingCustomer.id) === String(selectedCustomer.id) ? (
                           <form
                             className="inline-edit-form"
                             onSubmit={(e) => {
@@ -1052,7 +1055,7 @@ function AdminView() {
                       </div>
                       <div className="detail-actions">
                         {!editingCustomer ||
-                        editingCustomer.id !== selectedCustomer.id ? (
+                        String(editingCustomer.id) !== String(selectedCustomer.id) ? (
                           <>
                             <button
                               onClick={() => startEdit(selectedCustomer)}
@@ -1149,7 +1152,7 @@ function AdminView() {
                       </div>
                       <div className="detail-body">
                         {editingMechanic &&
-                        editingMechanic.id === selectedMechanic.id ? (
+                        String(editingMechanic.id) === String(selectedMechanic.id) ? (
                           <form
                             className="inline-edit-form"
                             onSubmit={(e) => {
@@ -1298,7 +1301,7 @@ function AdminView() {
                       </div>
                       <div className="detail-actions">
                         {!editingMechanic ||
-                        editingMechanic.id !== selectedMechanic.id ? (
+                        String(editingMechanic.id) !== String(selectedMechanic.id) ? (
                           <>
                             <button
                               onClick={() =>

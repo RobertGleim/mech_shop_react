@@ -2,9 +2,12 @@ import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import "./LoginView.css";
 
-const apiBase = import.meta.env.DEV ? "" : import.meta.env.VITE_API_URL || "";
+// IMPORTANT: Set VITE_API_URL in your frontend environment to your backend base URL (not /api)
+// Example for Render backend: VITE_API_URL=https://mech-shop-api.onrender.com
+const apiBase = import.meta.env.VITE_API_URL || ""; // Use VITE_API_URL always
 const buildUrl = (path) => {
   if (!path.startsWith("/")) path = `/${path}`;
+  // If apiBase is set, use it; otherwise fallback to relative /api
   return apiBase ? `${apiBase.replace(/\/$/, "")}${path}` : `/api${path}`;
 };
 const credentialsMode = apiBase ? "omit" : "include";

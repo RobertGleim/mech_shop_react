@@ -10,17 +10,20 @@ export function AuthProvider({ children }) {
 	const [isAdmin, setIsAdmin] = useState(false)
 	const [loading, setLoading] = useState(true)
 
-	
-	const persist = (tkn, type, adminFlag = false) => {
-		try {
-			if (tkn) localStorage.setItem('token', tkn)
-			else localStorage.removeItem('token')
-			if (type) localStorage.setItem('userType', type)
-			else localStorage.removeItem('userType')
-			localStorage.setItem('isAdmin', adminFlag ? '1' : '')
-		} catch {
-			/* ignore storage errors */
+	// safe localStorage helpers
+	const storage = {
+		get: (k) => {
+			try { return localStorage.getItem(k) } catch { return null }
+		},
+		set: (k, v) => {
+			try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v) } catch { /* ignore storage errors */ }
 		}
+	}
+
+	const persist = (tkn, type, adminFlag = false) => {
+		storage.set('token', tkn || null)
+		storage.set('userType', type || null)
+		storage.set('isAdmin', adminFlag ? '1' : '')
 	}
 
 	const clearAuth = () => {
@@ -32,11 +35,8 @@ export function AuthProvider({ children }) {
 		window.dispatchEvent(new Event('login-status-change'))
 	}
 
-	const logout = () => {
-		clearAuth()
-	}
+	const logout = () => clearAuth()
 
-	
 	const fetchProfile = async (tkn, type) => {
 		if (!tkn || !type) return null
 		const endpoint = type === 'customer' ? '/customers/profile' : '/mechanics/profile'
@@ -56,16 +56,9 @@ export function AuthProvider({ children }) {
 		}
 	}
 
-	
 	useEffect(() => {
-		let storedToken = null
-		let storedType = null
-		try {
-			storedToken = localStorage.getItem('token')
-			storedType = localStorage.getItem('userType')
-		} catch {
-			/* ignore */
-		}
+		const storedToken = storage.get('token')
+		const storedType = storage.get('userType')
 		if (storedToken && storedType) {
 			setToken(storedToken)
 			setUserType(storedType)
@@ -76,7 +69,6 @@ export function AuthProvider({ children }) {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
-	
 	const login = async ({ email, password, type: desiredType } = {}) => {
 		const payload = { email, password }
 		if (desiredType) payload.user_type = desiredType
@@ -112,18 +104,7 @@ export function AuthProvider({ children }) {
 		window.dispatchEvent(new Event('login-status-change'))
 	}
 
-	const value = {
-		token,
-		userType,
-		profile,
-		isAdmin,
-		loading,
-		login,
-		loginWithToken,
-		logout,
-		clearAuth,
-		fetchProfile
-	}
+	const value = { token, userType, profile, isAdmin, loading, login, loginWithToken, logout, clearAuth, fetchProfile }
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

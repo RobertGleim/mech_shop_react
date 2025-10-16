@@ -840,9 +840,9 @@ function AdminView() {
               <div className="detail-value">{admin?.email}</div>
             </div>
             <div className="detail-row">
-              <div className="detail-label">Phone</div>
+              <div className="detail-label">Salary</div>
               <div className="detail-value">
-                {admin?.phone || "Not provided"}
+                {admin?.salary || "Not provided"}
               </div>
             </div>
             <div className="detail-row">

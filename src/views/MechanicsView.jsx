@@ -103,30 +103,17 @@ export default function MechanicsView() {
       <div className="mechanic-wrapper">
         <h1>Welcome {capitalize(mechanic.first_name)}!</h1>
         <div className="mechanic-navigation">
-          {/* <button className={showProfile ? 'active' : ''} onClick={() => setShowProfile(true)}>
-						My Profile
-					</button> */}
-          {/* <button
-						className={!showProfile ? 'active' : ''}
-						onClick={() => {
-							setShowProfile(false)
-							if (jobs.length === 0) loadJobs()
-						}}
-					>
-						My Jobs
-					</button> */}
-          {/* <button onClick={handleLogout} className="logout-btn">Logout</button> */}
+        
         </div>
 
         {showProfile ? (
-          // Profile card updated to follow swagger: name, email, password, salary, address
-          <div className="customer-card-profile">
+          // Replaced profile card: copied from CustomerView and adapted for mechanic fields
+          <div className="mechanic-card-profile">
             <h3>Profile Information</h3>
 
             <div className="info-section">
               <p>
-                <strong>Name:</strong> {mechanic.first_name}{" "}
-                {mechanic.last_name}
+                <strong>Name:</strong> {mechanic.first_name} {mechanic.last_name}
               </p>
               <p>
                 <strong>Email:</strong> {mechanic.email}
@@ -158,13 +145,11 @@ export default function MechanicsView() {
             </div>
 
             <div className="profile-info-note" style={{ marginTop: 16 }}>
-              <p className="profile-note-title">
-                📝 Profile Information is Read-Only
-              </p>
+              <p className="profile-note-title">📝 Profile Information is Read-Only</p>
               <small className="profile-note-text">
-                For security reasons, profile updates are managed by
-                administration. If you need to change your personal information,
-                please contact your manager or support.
+                For security reasons, profile updates are managed by administration. If
+                you need to change your personal information, please contact your
+                manager or support.
               </small>
             </div>
           </div>

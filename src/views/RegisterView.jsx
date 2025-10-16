@@ -34,6 +34,7 @@ export default function RegisterView() {
       });
       if (!resp.ok) {
         const body = await resp.json().catch(() => null);
+        console.log("Register error:", resp.status, body); // <-- Added
         setError(
           (body && (body.message || JSON.stringify(body))) ||
             `Failed (${resp.status})`
@@ -43,6 +44,7 @@ export default function RegisterView() {
       setSuccess(true);
       setTimeout(() => navigate("/login"), 1200);
     } catch (err) {
+      console.log("Network/register error:", err); // <-- Added
       setError(err?.message || "Network error");
     } finally {
       setLoading(false);

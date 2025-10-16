@@ -2,10 +2,11 @@
 
 .browse-container {
   background-color: #121212;
-  color: #F5F5F5;
+  color: #f5f5f5;
   min-height: 100vh;
   padding: 40px 20px;
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial;
 }
 
 * {
@@ -23,9 +24,9 @@
   display: flex;
   gap: 24px;
   align-items: center;
-  background-color: #2C2C2C;
+  background-color: #2c2c2c;
   border-radius: 14px;
-  border: 1px solid #3D3D3D;
+  border: 1px solid #3d3d3d;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   padding: 24px;
@@ -33,7 +34,7 @@
 }
 
 .card:hover {
-  background-color: #1F1F1F;
+  background-color: #1f1f1f;
   transform: translateY(-5px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
 }
@@ -45,7 +46,7 @@
   border-radius: 10px;
   overflow: hidden;
   position: relative;
-  border: 1px solid #3D3D3D;
+  border: 1px solid #3d3d3d;
 }
 
 .card-image img {
@@ -54,22 +55,22 @@
   object-fit: cover;
   display: block;
   transition: transform 0.3s ease;
-  background-color: #1F1F1F;
+  background-color: #1f1f1f;
   /* Fallback background in case image doesn't load */
 }
 
 /* Loading state and error handling */
 .card-image::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(45deg, #2C2C2C 25%, transparent 25%), 
-              linear-gradient(-45deg, #2C2C2C 25%, transparent 25%), 
-              linear-gradient(45deg, transparent 75%, #2C2C2C 75%), 
-              linear-gradient(-45deg, transparent 75%, #2C2C2C 75%);
+  background: linear-gradient(45deg, #2c2c2c 25%, transparent 25%),
+    linear-gradient(-45deg, #2c2c2c 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #2c2c2c 75%),
+    linear-gradient(-45deg, transparent 75%, #2c2c2c 75%);
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
   opacity: 0;
@@ -99,7 +100,7 @@
 .card-text h3 {
   margin: 0 0 12px 0;
   font-size: 22px;
-  background: linear-gradient(135deg, #F5F5F5 0%, #a0d8f8 100%);
+  background: linear-gradient(135deg, #f5f5f5 0%, #a0d8f8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -109,7 +110,7 @@
 
 .card-text p {
   margin: 0;
-  color: #B0B0B0;
+  color: #b0b0b0;
   line-height: 1.6;
   background-color: transparent;
   font-size: 15px;
@@ -125,27 +126,27 @@
   .browse-container {
     padding: 20px 15px;
   }
-  
+
   .card {
     flex-direction: column;
     padding: 20px;
   }
-  
+
   .card.reverse {
     flex-direction: column;
   }
-  
+
   .card-image {
     width: 100%;
     height: 200px;
     min-width: unset;
   }
-  
+
   .card-text {
     padding-top: 16px;
     text-align: center;
   }
-  
+
   .wrap {
     gap: 20px;
   }
@@ -165,7 +166,7 @@
 
 /* Additional styling for better dark theme integration */
 .wrap::before {
-  content: '';
+  content: "";
   display: block;
   margin-bottom: 20px;
 }
@@ -183,7 +184,7 @@
 
 /* Loading state for images */
 .card-image img {
-  background-color: #1F1F1F;
+  background-color: #1f1f1f;
 }
 
 /* Enhanced mobile responsiveness */
@@ -191,15 +192,15 @@
   .browse-container {
     padding: 15px 10px;
   }
-  
+
   .card {
     padding: 16px;
   }
-  
+
   .card-text h3 {
     font-size: 20px;
   }
-  
+
   .card-text p {
     font-size: 14px;
   }

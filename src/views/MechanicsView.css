@@ -19,7 +19,7 @@
 
 .mechanic-wrapper h2 {
   font-size: 1.2rem;
-  color: #B0B0B0;
+  color: #b0b0b0;
   margin-bottom: 20px;
 }
 
@@ -32,9 +32,9 @@
 
 .tab-button {
   padding: 12px 24px;
-  background-color: #2C2C2C;
+  background-color: #2c2c2c;
   color: white;
-  border: 2px solid #3D3D3D;
+  border: 2px solid #3d3d3d;
   border-radius: 8px;
   font-size: 16px;
   cursor: pointer;
@@ -45,16 +45,16 @@
 }
 
 .tab-button.active {
-  background-color: #3D3D3D;
+  background-color: #3d3d3d;
   border-color: #a0d8f8;
   color: #a0d8f8;
 }
 
 .mechanic-card {
-  background-color: #2C2C2C;
+  background-color: #2c2c2c;
   border-radius: 16px;
   padding: 32px;
-  border: 1px solid #3D3D3D;
+  border: 1px solid #3d3d3d;
   text-align: left;
 }
 
@@ -84,9 +84,9 @@
 
 .mechanic-btn {
   padding: 12px 24px;
-  background-color: #3D3D3D;
+  background-color: #3d3d3d;
   color: white;
-  border: 2px solid #3D3D3D;
+  border: 2px solid #3d3d3d;
   border-radius: 8px;
   font-size: 16px;
   cursor: pointer;
@@ -117,14 +117,14 @@
   width: 100%;
   padding: 10px;
   background-color: #121212;
-  border: 2px solid #3D3D3D;
+  border: 2px solid #3d3d3d;
   border-radius: 8px;
   color: white;
   font-size: 16px;
 }
 
 .disabled-input {
-  background-color: #1A1A1A !important;
+  background-color: #1a1a1a !important;
   opacity: 0.6;
 }
 
@@ -165,7 +165,7 @@
 }
 
 .job-item {
-  background-color: #1F1F1F;
+  background-color: #1f1f1f;
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 15px;
@@ -178,7 +178,7 @@
 }
 
 .job-status {
-  background-color: #3D3D3D;
+  background-color: #3d3d3d;
   padding: 5px 10px;
   border-radius: 20px;
   font-size: 12px;
@@ -220,7 +220,7 @@
 .no-jobs {
   text-align: center;
   padding: 40px 0;
-  color: #B0B0B0;
+  color: #b0b0b0;
 }
 
 /* Responsive */
@@ -228,36 +228,36 @@
   .mechanic-container {
     padding: 20px 15px;
   }
-  
+
   .mechanic-card {
     padding: 24px;
   }
-  
+
   .buttons-section,
   .form-buttons {
     flex-direction: column;
   }
-  
+
   .mechanic-btn,
   .form-buttons button {
     width: 100%;
   }
-  
+
   .tab-navigation {
     flex-direction: column;
     gap: 10px;
   }
-  
+
   .tab-button {
     width: 100%;
   }
-  
+
   .job-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
   }
-  
+
   .job-actions {
     justify-content: center;
     margin-top: 15px;
@@ -269,7 +269,7 @@
   .mechanic-card {
     padding: 20px;
   }
-  
+
   .mechanic-btn {
     width: 100%;
     margin-bottom: 10px;

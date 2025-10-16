@@ -1,7 +1,7 @@
 .contact-container {
   min-height: 100vh;
   background-color: #121212;
-  color: #F5F5F5;
+  color: #f5f5f5;
   padding: 40px 20px;
 }
 
@@ -17,22 +17,23 @@
 
 .contact-card,
 .contact-form-card {
-  background-color: #2C2C2C;
+  position: relative; /* enable absolute-positioned close button inside card */
+  background-color: #2c2c2c;
   border-radius: 16px;
   padding: 32px;
-  border: 1px solid #3D3D3D;
+  border: 1px solid #3d3d3d;
   margin-bottom: 30px;
   text-align: left;
   width: 100%;
   box-sizing: border-box;
   max-width: 760px;
   /* subtle consistent shadow like home/admin */
-  box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
 }
 
 .contact-card h3,
 .contact-form-card h3 {
-  color: #F5F5F5;
+  color: #f5f5f5;
   margin-bottom: 20px;
   font-size: 1.3rem;
 }
@@ -71,7 +72,7 @@
 }
 
 .form-group label {
-  color: #F5F5F5;
+  color: #f5f5f5;
   margin-bottom: 0.5rem;
   display: block;
   font-weight: 500;
@@ -104,7 +105,7 @@
 .autofilled {
   background-color: rgba(160, 216, 248, 0.1);
   border-color: #a0d8f8;
-  color: #F5F5F5;
+  color: #f5f5f5;
 }
 
 .form-group small {
@@ -114,13 +115,12 @@
   margin-top: 4px;
 }
 
-
 button {
   width: 100%;
   padding: 16px;
-  background: linear-gradient(135deg, #2C2C2C 0%, #3D3D3D 100%);
-  color: #F5F5F5;
-  border: 2px solid #3D3D3D;
+  background: linear-gradient(135deg, #2c2c2c 0%, #3d3d3d 100%);
+  color: #f5f5f5;
+  border: 2px solid #3d3d3d;
   border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
@@ -146,10 +146,10 @@ button:disabled {
 }
 
 .contact-info {
-  background-color: #2C2C2C;
+  background-color: #2c2c2c;
   border-radius: 16px;
   padding: 24px;
-  border: 1px solid #3D3D3D;
+  border: 1px solid #3d3d3d;
 }
 
 .contact-info h3 {
@@ -158,8 +158,37 @@ button:disabled {
 }
 
 .contact-info p {
-  color: #B0B0B0;
+  color: #b0b0b0;
   margin-bottom: 8px;
+}
+
+/* Close button placed inside the top-right of the contact-card */
+.contact-card .close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: #f5f5f5;
+
+  /* override global button rules */
+  width: auto;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+/* accessible focus and hover styles */
+.contact-card .close-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(160, 216, 248, 0.18);
+}
+
+.contact-card .close-btn:hover {
+  color: #a0d8f8;
+  background: rgba(160, 216, 248, 0.04);
 }
 
 @media (max-width: 768px) {

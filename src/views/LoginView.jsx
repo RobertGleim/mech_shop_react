@@ -1,143 +1,178 @@
-import React, { useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
-import './LoginView.css'
+import React, { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import "./LoginView.css";
 
-
-const apiBase = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL || '')
+const apiBase = import.meta.env.DEV ? "" : import.meta.env.VITE_API_URL || "";
 const buildUrl = (path) => {
-	if (!path.startsWith('/')) path = `/${path}`
-	return apiBase ? `${apiBase.replace(/\/$/, '')}${path}` : `/api${path}`
-}
-const credentialsMode = apiBase ? 'omit' : 'include'
+  if (!path.startsWith("/")) path = `/${path}`;
+  return apiBase ? `${apiBase.replace(/\/$/, "")}${path}` : `/api${path}`;
+};
+const credentialsMode = apiBase ? "omit" : "include";
 
 export default function LoginView() {
-	const [emailOrUsername, setEmailOrUsername] = useState('')
-	const [password, setPassword] = useState('')
-	const [errorMessage, setErrorMessage] = useState('')
-	const [loading, setLoading] = useState(false)
-	const [userType, setUserType] = useState('mechanic')
-	const navigate = useNavigate()
+  const [emailOrUsername, setEmailOrUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [userType, setUserType] = useState("mechanic");
+  const navigate = useNavigate();
 
-	async function handleSubmit(event) {
-	  event.preventDefault()
-		setErrorMessage('')
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setErrorMessage("");
 
-		const id = (emailOrUsername || '').trim()
-		const pwd = (password || '').trim()
-		if (!id) return setErrorMessage('Please enter your email or username.')
-		if (!pwd) return setErrorMessage('Please enter your password.')
+    const id = (emailOrUsername || "").trim();
+    const pwd = (password || "").trim();
+    if (!id) return setErrorMessage("Please enter your email or username.");
+    if (!pwd) return setErrorMessage("Please enter your password.");
 
-		
-		const payload = { password: pwd }
-		if (id.includes('@')) payload.email = id
-		else payload.username = id
+    const payload = { password: pwd };
+    if (id.includes("@")) payload.email = id;
+    else payload.username = id;
 
-		setLoading(true)
-		try {
-			
-			const endpoint = userType === 'customer' ? '/customers/login' : '/mechanics/login'
-			const resp = await fetch(buildUrl(endpoint), {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				credentials: credentialsMode,
-				body: JSON.stringify(payload)
-			})
+    setLoading(true);
+    try {
+      const endpoint =
+        userType === "customer" ? "/customers/login" : "/mechanics/login";
+      const resp = await fetch(buildUrl(endpoint), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: credentialsMode,
+        body: JSON.stringify(payload),
+      });
 
-			let data = null
-			try { data = await resp.json() } catch { data = null }
+      let data = null;
+      try {
+        data = await resp.json();
+      } catch {
+        data = null;
+      }
 
-			if (!resp.ok) {
-				const msg = data?.message || data?.error || `Login failed (${resp.status})`
-				setErrorMessage(msg)
-				return
-			}
+      if (!resp.ok) {
+        const msg =
+          data?.message || data?.error || `Login failed (${resp.status})`;
+        setErrorMessage(msg);
+        return;
+      }
 
-			const token = data?.token || data?.access_token || data?.accessToken
-			if (!token) {
-				setErrorMessage('No token returned from server.')
-				return
-			}
+      const token = data?.token || data?.access_token || data?.accessToken;
+      if (!token) {
+        setErrorMessage("No token returned from server.");
+        return;
+      }
 
-			
-			try {
-				localStorage.setItem('token', token)
-				localStorage.setItem('access_token', token)
-				localStorage.setItem('authToken', token)
-				
-				sessionStorage.setItem('token', token)
-				
-				document.cookie = `token=${encodeURIComponent(token)};path=/;max-age=${7*24*60*60}`
-			} catch {
-				// Ignore storage errors
-			}
+      try {
+        localStorage.setItem("token", token);
+        localStorage.setItem("access_token", token);
+        localStorage.setItem("authToken", token);
 
-			
-			if (typeof data.id !== 'undefined') localStorage.setItem('userId', String(data.id))
+        sessionStorage.setItem("token", token);
 
-			if (userType === 'customer') {
-				
-				localStorage.setItem('isAdmin', 'false')
-				localStorage.setItem('userType', 'customer')
-			} else {
-				
-				const isAdmin = !!data.is_admin
-				localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false')
-				localStorage.setItem('userType', isAdmin ? 'admin' : 'mechanic')
-			}
+        document.cookie = `token=${encodeURIComponent(token)};path=/;max-age=${
+          7 * 24 * 60 * 60
+        }`;
+      } catch {
+        // Ignore storage errors
+      }
 
-			
-			window.dispatchEvent(new Event('login-status-change'))
+      if (typeof data.id !== "undefined")
+        localStorage.setItem("userId", String(data.id));
 
-			
-			const role = localStorage.getItem('userType')
-			if (role === 'admin') navigate('/admin')
-			else if (role === 'customer') navigate('/')
-			else navigate('/')
-		} catch (err) {
-			setErrorMessage(err?.message || 'Network error during login.')
-		} finally {
-			setLoading(false)
-		}
-	}
+      if (userType === "customer") {
+        localStorage.setItem("isAdmin", "false");
+        localStorage.setItem("userType", "customer");
+      } else {
+        const isAdmin = !!data.is_admin;
+        localStorage.setItem("isAdmin", isAdmin ? "true" : "false");
+        localStorage.setItem("userType", isAdmin ? "admin" : "mechanic");
+      }
 
-	return (
-		<div className="login-container">
-			<div className="login-wrapper">
-				<div className="login-card">
-					<div className="login-header">
-						<h1>Welcome Back</h1>
-						<h2>Sign in to your account</h2>
-					</div>
+      window.dispatchEvent(new Event("login-status-change"));
 
-					<form onSubmit={handleSubmit} className="login-form">
-						{errorMessage && <div className="error">{errorMessage}</div>}
+      const role = localStorage.getItem("userType");
+      if (role === "admin") navigate("/admin");
+      else if (role === "customer") navigate("/");
+      else navigate("/");
+    } catch (err) {
+      setErrorMessage(err?.message || "Network error during login.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-						<div className="user-type-switch">
-							<button type="button" className={`switch-btn ${userType === 'customer' ? 'active' : ''}`} onClick={() => setUserType('customer')}>Customer</button>
-							<button type="button" className={`switch-btn ${userType === 'mechanic' ? 'active' : ''}`} onClick={() => setUserType('mechanic')}>Mechanic</button>
-						</div>
+  return (
+    <div className="login-container">
+      <div className="login-wrapper">
+        <div className="login-card">
+          <div className="login-header">
+            <h1>Welcome Back</h1>
+            <h2>Sign in to your account</h2>
+          </div>
 
-						<div className="form-group">
-							<label>Email or Username</label>
-							<input type="text" value={emailOrUsername} onChange={e => setEmailOrUsername(e.target.value)} placeholder="Enter your email or username" required />
-						</div>
+          <form onSubmit={handleSubmit} className="login-form">
+            {errorMessage && <div className="error">{errorMessage}</div>}
 
-						<div className="form-group">
-							<label>Password</label>
-							<input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter your password" required />
-						</div>
+            <div className="user-type-switch">
+              <button
+                type="button"
+                className={`switch-btn ${
+                  userType === "customer" ? "active" : ""
+                }`}
+                onClick={() => setUserType("customer")}
+              >
+                Customer
+              </button>
+              <button
+                type="button"
+                className={`switch-btn ${
+                  userType === "mechanic" ? "active" : ""
+                }`}
+                onClick={() => setUserType("mechanic")}
+              >
+                Mechanic
+              </button>
+            </div>
 
-						<button type="submit" className="login-btn" disabled={loading}>
-							{loading ? 'Signing In...' : `Sign In as ${userType === 'customer' ? 'Customer' : 'Mechanic'}`}
-						</button>
-					</form>
+            <div className="form-group">
+              <label>Email or Username</label>
+              <input
+                type="text"
+                value={emailOrUsername}
+                onChange={(e) => setEmailOrUsername(e.target.value)}
+                placeholder="Enter your email or username"
+                required
+              />
+            </div>
 
-					<div className="login-footer">
-						<p>Don't have an account? <NavLink to="/register">Sign up here</NavLink></p>
-						<NavLink to="/forgot-password">Forgot your password?</NavLink>
-					</div>
-				</div>
-			</div>
-		</div>
-	)
+            <div className="form-group">
+              <label>Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+              />
+            </div>
+
+            <button type="submit" className="login-btn" disabled={loading}>
+              {loading
+                ? "Signing In..."
+                : `Sign In as ${
+                    userType === "customer" ? "Customer" : "Mechanic"
+                  }`}
+            </button>
+          </form>
+
+          <div className="login-footer">
+            <p>
+              Don't have an account?{" "}
+              <NavLink to="/register">Sign up here</NavLink>
+            </p>
+            <NavLink to="/forgot-password">Forgot your password?</NavLink>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

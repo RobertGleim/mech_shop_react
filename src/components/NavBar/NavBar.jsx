@@ -1,53 +1,41 @@
-import React, { useState, useEffect } from 'react'
-import { NavLink } from 'react-router-dom'
-import './NavBar.css'
-import logo from '../../assets/logo.png' // Adjust path if needed
+import React, { useState, useEffect, useCallback } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import "./NavBar.css";
+import logo from "../../assets/logo.png"; // Adjust path if needed
 
-function NavBar() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [userType, setUserType] = useState(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  
-  // Check login status when component mounts and when localStorage changes
+export default function NavBar() {
+  const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userType, setUserType] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // single memoized updater for auth state
+  const updateAuth = useCallback(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(Boolean(token));
+    setUserType(localStorage.getItem("userType"));
+    setIsAdmin(localStorage.getItem("isAdmin") === "true");
+  }, []);
+
   useEffect(() => {
-    // Function to check login status
-    function checkLoginStatus() {
-      const token = localStorage.getItem('token')
-      const type = localStorage.getItem('userType')
-      const adminFlag = localStorage.getItem('isAdmin') === 'true'
-      setIsLoggedIn(!!token) // Convert to boolean
-      setUserType(type)
-      setIsAdmin(adminFlag)
-    }
-    
-    // Check immediately on mount
-    checkLoginStatus()
-    
-    // Create a custom event listener for login status changes
-    window.addEventListener('storage', checkLoginStatus)
-    window.addEventListener('login-status-change', checkLoginStatus)
-    
+    updateAuth(); // initial check
+    window.addEventListener("storage", updateAuth);
+    window.addEventListener("login-status-change", updateAuth);
     return () => {
-      window.removeEventListener('storage', checkLoginStatus)
-      window.removeEventListener('login-status-change', checkLoginStatus)
-    }
-  }, [])
+      window.removeEventListener("storage", updateAuth);
+      window.removeEventListener("login-status-change", updateAuth);
+    };
+  }, [updateAuth]);
 
-  // Logout function
   const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('userType')
-    localStorage.removeItem('isAdmin')
-    setIsLoggedIn(false)
-    setUserType(null)
-    setIsAdmin(false)
-    
-    // Dispatch event to notify other components
-    window.dispatchEvent(new Event('login-status-change'))
-    
-    // Navigate to home
-    window.location.href = '/'
-  }
+    localStorage.removeItem("token");
+    localStorage.removeItem("userType");
+    localStorage.removeItem("isAdmin");
+    // update local state and notify others
+    updateAuth();
+    window.dispatchEvent(new Event("login-status-change"));
+    navigate("/", { replace: true });
+  };
 
   return (
     <header>
@@ -59,38 +47,56 @@ function NavBar() {
       </div>
       <nav className="nav-links">
         <ul>
-          <li><NavLink to="/">Home</NavLink></li>
-          <li><NavLink to="/browse">Services</NavLink></li>
-          
+          <li>
+            <NavLink to="/">Home</NavLink>
+          </li>
+          <li>
+            <NavLink to="/browse">Services</NavLink>
+          </li>
+
           {/* Only show Contact link if NOT a mechanic */}
-          {(userType !== 'mechanic') && (
-            <li><NavLink to="/contact">Contact</NavLink></li>
+          {userType !== "mechanic" && (
+            <li>
+              <NavLink to="/contact">Contact</NavLink>
+            </li>
           )}
-          
+
           {/* Show appropriate profile link based on user type */}
-          {isLoggedIn && userType === 'mechanic' && (
-            <li><NavLink to="/mechanic">Profile</NavLink></li>
+          {isLoggedIn && userType === "mechanic" && (
+            <li>
+              <NavLink to="/mechanic">Profile</NavLink>
+            </li>
           )}
           {isAdmin && (
-            <li><NavLink to="/admin">Admin</NavLink></li>
+            <li>
+              <NavLink to="/admin">Admin</NavLink>
+            </li>
           )}
-          {isLoggedIn && userType === 'customer' && (
-            <li><NavLink to="/customer">Profile</NavLink></li>
+          {isLoggedIn && userType === "customer" && (
+            <li>
+              <NavLink to="/customer">Profile</NavLink>
+            </li>
           )}
-          
+
           {/* Only show login/register when NOT logged in */}
           {!isLoggedIn ? (
             <>
-              <li><NavLink to="/login">Login</NavLink></li>
-              <li><NavLink to="/register">Register</NavLink></li>
+              <li>
+                <NavLink to="/login">Login</NavLink>
+              </li>
+              <li>
+                <NavLink to="/register">Register</NavLink>
+              </li>
             </>
           ) : (
-            <li><NavLink to="/" onClick={handleLogout}>Logout</NavLink></li>
+            <li>
+              <NavLink to="/" onClick={handleLogout}>
+                Logout
+              </NavLink>
+            </li>
           )}
         </ul>
       </nav>
     </header>
-  )
+  );
 }
-
-export default NavBar

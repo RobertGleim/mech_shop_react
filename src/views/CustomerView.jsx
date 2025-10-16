@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import "./CustomerView.css"; //comment
+import "./CustomerView.css";
 import { apiUrl } from "../lib/api";
 
 export default function CustomerView() {

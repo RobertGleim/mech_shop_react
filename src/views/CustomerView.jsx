@@ -20,8 +20,8 @@ export default function CustomerView() {
         const resp = await apiFetch("/customers/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!resp.ok) {
-          // on auth failure or other error, redirect to login
+        // treat 403 like 401 (clear auth & redirect)
+        if (resp.status === 401 || resp.status === 403 || !resp.ok) {
           localStorage.removeItem("token");
           localStorage.removeItem("userType");
           localStorage.removeItem("isAdmin");

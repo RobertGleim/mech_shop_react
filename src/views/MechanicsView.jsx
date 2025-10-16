@@ -32,7 +32,8 @@ export default function MechanicsView() {
         const resp = await fetch(apiUrl("/mechanics/profile"), {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (resp.status === 401) {
+        // treat 403 like 401 (clear auth & redirect)
+        if (resp.status === 401 || resp.status === 403) {
           clearAuthAndRedirect();
           return;
         }
@@ -59,7 +60,8 @@ export default function MechanicsView() {
       const resp = await fetch(apiUrl(`/mechanics/${mechanic.id}/jobs`), {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (resp.status === 401) {
+      // treat 403 like 401 (clear auth & redirect)
+      if (resp.status === 401 || resp.status === 403) {
         clearAuthAndRedirect();
         return;
       }

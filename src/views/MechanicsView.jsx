@@ -11,6 +11,13 @@ export default function MechanicsView() {
 	const [jobs, setJobs] = useState([])
 	const [jobsLoading, setJobsLoading] = useState(false)
 
+	const clearAuthAndRedirect = React.useCallback(() => {
+		localStorage.removeItem('token')
+		localStorage.removeItem('userType')
+		localStorage.removeItem('isAdmin')
+		navigate('/login')
+	}, [navigate])
+
 	useEffect(() => {
 		const init = async () => {
 			const token = localStorage.getItem('token')
@@ -26,26 +33,20 @@ export default function MechanicsView() {
 					headers: { Authorization: `Bearer ${token}` }
 				})
 				if (resp.status === 401) {
-					localStorage.removeItem('token')
-					localStorage.removeItem('userType')
-					localStorage.removeItem('isAdmin')
-					navigate('/login')
+					clearAuthAndRedirect()
 					return
 				}
 				if (!resp.ok) throw new Error(`Failed (${resp.status})`)
 				const data = await resp.json()
 				setMechanic(data)
 			} catch {
-				localStorage.removeItem('token')
-				localStorage.removeItem('userType')
-				localStorage.removeItem('isAdmin')
-				navigate('/login')
+				clearAuthAndRedirect()
 			} finally {
 				setLoading(false)
 			}
 		}
 		init()
-	}, [navigate])
+	}, [navigate, clearAuthAndRedirect])
 
 	const loadJobs = async () => {
 		const token = localStorage.getItem('token')
@@ -59,28 +60,22 @@ export default function MechanicsView() {
 				headers: { Authorization: `Bearer ${token}` }
 			})
 			if (resp.status === 401) {
-				localStorage.removeItem('token')
-				localStorage.removeItem('userType')
-				localStorage.removeItem('isAdmin')
-				navigate('/login')
+				clearAuthAndRedirect()
 				return
 			}
 			if (!resp.ok) throw new Error(`Failed (${resp.status})`)
 			const data = await resp.json()
 			setJobs(data)
 		} catch {
-			// keep lightweight: errors are ignored here
+			// ignore errors
 		} finally {
 			setJobsLoading(false)
 		}
 	}
 
 	const handleLogout = () => {
-		localStorage.removeItem('token')
-		localStorage.removeItem('userType')
-		localStorage.removeItem('isAdmin')
+		clearAuthAndRedirect()
 		window.dispatchEvent(new Event('login-status-change'))
-		navigate('/login')
 	}
 
 	if (loading) return <div className="mechanic-container">Loading...</div>

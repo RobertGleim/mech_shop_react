@@ -10,14 +10,9 @@ export function AuthProvider({ children }) {
 	const [isAdmin, setIsAdmin] = useState(false)
 	const [loading, setLoading] = useState(true)
 
-	// safe localStorage helpers
 	const storage = {
-		get: (k) => {
-			try { return localStorage.getItem(k) } catch { return null }
-		},
-		set: (k, v) => {
-			try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v) } catch { /* ignore storage errors */ }
-		}
+		get: (k) => { try { return localStorage.getItem(k) } catch { return null } },
+		set: (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v) } catch { /* ignore errors */ } }
 	}
 
 	const persist = (tkn, type, adminFlag = false) => {
@@ -35,8 +30,6 @@ export function AuthProvider({ children }) {
 		window.dispatchEvent(new Event('login-status-change'))
 	}
 
-	const logout = () => clearAuth()
-
 	const fetchProfile = async (tkn, type) => {
 		if (!tkn || !type) return null
 		const endpoint = type === 'customer' ? '/customers/profile' : '/mechanics/profile'
@@ -49,8 +42,7 @@ export function AuthProvider({ children }) {
 			setProfile(data)
 			setIsAdmin(Boolean(data?.is_admin || data?.isAdmin))
 			return data
-		} catch (err) {
-			console.debug('fetchProfile error', err)
+		} catch {
 			clearAuth()
 			return null
 		}
@@ -72,7 +64,6 @@ export function AuthProvider({ children }) {
 	const login = async ({ email, password, type: desiredType } = {}) => {
 		const payload = { email, password }
 		if (desiredType) payload.user_type = desiredType
-
 		const res = await fetch(apiUrl('/auth/login'), {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -104,7 +95,7 @@ export function AuthProvider({ children }) {
 		window.dispatchEvent(new Event('login-status-change'))
 	}
 
-	const value = { token, userType, profile, isAdmin, loading, login, loginWithToken, logout, clearAuth, fetchProfile }
+	const value = { token, userType, profile, isAdmin, loading, login, loginWithToken, logout: clearAuth, clearAuth, fetchProfile }
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

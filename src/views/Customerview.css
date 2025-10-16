@@ -61,14 +61,14 @@
 
   border-radius: 10px;
   background: linear-gradient(180deg, #360909 0%, #232323 100%);
-  border: 1px solid rgba(160, 216, 248, 0.08); /* subtle border to match theme */
+  border: 1px solid rgba(160, 216, 248, 0.08); 
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
   overflow: hidden;
-  width: calc(100% - 40px); /* small page gutters */
-  max-width: 800px; /* match wrapper/card width */
+  width: calc(100% - 40px); 
+  max-width: 800px; 
   box-sizing: border-box;
-  z-index: 1200; /* ensure above other content */
-  margin: 0; /* fixed element doesn't need margin */
+  z-index: 1200; 
+  margin: 0; 
 }
 
 .profile-info-note > * {
@@ -80,6 +80,7 @@
   flex-wrap: wrap;
   text-align: center;
 }
+
 
 @media (max-width: 768px) {
   .customer-card {

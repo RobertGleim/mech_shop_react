@@ -18,17 +18,17 @@
   display: flex;
   gap: 12px;
   align-items: center;
-  justify-content: space-between; /* keep header content and actions separated */
+  justify-content: space-between; 
 }
 
-/* container for header actions */
+
 .admin-header-actions {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-/* styled anchor that behaves like the other admin action buttons */
+
 .add-mechanic-link {
   display: inline-flex;
   align-items: center;
@@ -48,17 +48,9 @@
   transform: translateY(-1px);
 }
 
-/* keep responsive behavior: ensure header wraps gracefully on small screens */
-@media (max-width: 900px) {
-  .admin-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-}
 
 .admin-actions {
-  /* make management sections sit side-by-side on wide screens */
+ 
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1.25rem;
@@ -66,20 +58,13 @@
   margin-top: 1.25rem;
 }
 
-/* keep responsive behavior: stack on small screens */
-@media (max-width: 900px) {
-  .admin-actions {
-    grid-template-columns: 1fr;
-  }
-}
 
-/* ---------- Consolidated card base & list grid (applies to both customers & mechanics) ---------- */
 .card-base,
 .customer-card,
 .mechanic-card,
 .admin-card,
 .detail-panel {
-  /* unified visual appearance for all cards */
+  
   background-color: #2c2c2c;
   color: #f5f5f5;
   padding: 1rem;
@@ -89,7 +74,7 @@
   box-sizing: border-box;
 }
 
-/* Single authoritative detail-panel rule */
+
 .detail-panel {
   position: relative;
   background: linear-gradient(180deg, #1f1f1f, #262626);
@@ -99,7 +84,7 @@
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 
-/* Shared small close box */
+
 .close-box {
   position: absolute;
   top: 8px;
@@ -124,20 +109,20 @@
   transform: translateY(-1px);
 }
 
-/* Unified grid for lists */
+
 .list-grid,
 .customers-grid,
 .mechanics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1rem;
-  align-items: stretch; /* ensure equal-height children */
+  align-items: stretch; 
 }
 
-/* Ensure customer-card and mechanic-card share exactly the same layout/spacing */
+
 .customer-card,
 .mechanic-card {
-  /* reuse card-base visual via same selector above */
+  
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -147,7 +132,7 @@
   margin: 0;
 }
 
-/* unified inner content spacing */
+
 .card-content,
 .customer-info,
 .mechanic-info {
@@ -155,7 +140,7 @@
   color: #dcdcdc;
 }
 
-/* identical title & subtext for both card types */
+
 .card-title {
   font-size: 1.05rem;
   margin: 0 0 0.35rem 0;
@@ -173,7 +158,7 @@
   text-overflow: ellipsis;
 }
 
-/* identical action button area at card bottom */
+
 .customer-actions,
 .mechanic-actions {
   display: flex;
@@ -183,7 +168,7 @@
   align-items: center;
 }
 
-/* shared button look inside cards */
+
 .customer-actions .btn,
 .mechanic-actions .btn,
 .detail-actions .btn,
@@ -204,7 +189,7 @@
   border: 1px solid #201b1b;
 }
 
-/* Unified detail rows: label/value two-column layout */
+
 .detail-body {
   display: grid;
   gap: 0.5rem;
@@ -228,7 +213,7 @@
   word-break: break-word;
 }
 
-/* Inline small close used next to load buttons (shared) */
+
 .inline-close-btn {
   display: inline-flex;
   align-items: center;
@@ -249,7 +234,7 @@
   transform: translateY(-1px);
 }
 
-/* headings for lists use same size/spacing */
+
 .customers-list h4,
 .mechanics-list h4 {
   margin: 0 0 0.75rem 0;
@@ -257,7 +242,7 @@
   font-weight: 700;
 }
 
-/* small helper: ensure form-groups inside cards look the same */
+
 .form-group {
   margin-bottom: 1rem;
 }
@@ -278,7 +263,7 @@
   box-sizing: border-box;
 }
 
-/* Additional styles for ID in card title and detail header */
+
 .card-id {
   margin-left: 8px;
   font-size: 0.85rem;
@@ -298,7 +283,7 @@
   font-weight: 600;
 }
 
-/* New rules for inline edit form inside detail panel */
+
 .detail-panel .inline-edit-form {
   margin: 0;
 }
@@ -324,12 +309,12 @@
   box-sizing: border-box;
 }
 
-/* keep cancel button subdued */
+
 .detail-panel .inline-edit-form .btn.cancel {
   background: #777;
 }
 
-/* Inline checkbox + helper for mechanic admin flag */
+
 .admin-checkbox-row {
   display: flex;
   align-items: center;
@@ -347,13 +332,13 @@
   width: 16px;
   height: 16px;
   margin: 0;
-  accent-color: #23493c; /* match button/brand color where supported */
+  accent-color: #23493c; 
 }
 .checkbox-text {
   font-size: 0.95rem;
 }
 
-/* helper comment shown next to checkbox */
+
 .admin-help {
   font-size: 0.85rem;
   color: #aeb6c2;
@@ -361,19 +346,19 @@
   margin-left: 4px;
 }
 
-/* Modal centered overlay used for Add Mechanic / Add Customer */
+
 .modal-overlay {
   position: fixed;
   z-index: 1100;
-  inset: 0; /* top/right/bottom/left 0 */
-  background: rgba(6, 6, 6, 0.6); /* dark backdrop */
+  inset: 0; 
+  background: rgba(6, 6, 6, 0.6); 
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
 }
 
-/* Modal card */
+
 .modal {
   width: 100%;
   max-width: 720px;
@@ -385,7 +370,7 @@
   box-sizing: border-box;
 }
 
-/* keep inner form spacing consistent inside modal */
+
 .modal .inline-edit-form .form-group {
   margin-bottom: 0.75rem;
 }
@@ -393,45 +378,34 @@
   margin-bottom: 8px;
 }
 
-/* ensure the close button sits on top */
+
 .modal .close-box {
   z-index: 1110;
 }
 
-/* Modal form buttons: place Create + Cancel on one row, each 40% width with space between */
+
 .modal .form-actions.modal-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem; /* small consistent gap between buttons */
+  gap: 1rem; 
   margin-top: 12px;
 }
 
-/* Make each button take 40% of modal width */
+
 .modal .form-actions.modal-actions .btn {
   width: 40%;
-  margin: 0; /* remove inline margins, spacing handled by flex/gap */
+  margin: 0; 
   box-sizing: border-box;
 }
 
-/* Slight visual separation for cancel button if needed */
+
 .modal .form-actions.modal-actions .btn.cancel {
-  background: #777; /* subdued cancel look matches other cancel rules */
+  background: #777; 
   border-color: rgba(255, 255, 255, 0.04);
 }
 
-/* Responsive: stack buttons on small screens */
-@media (max-width: 600px) {
-  .modal .form-actions.modal-actions {
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  .modal .form-actions.modal-actions .btn {
-    width: 100%;
-  }
-}
 
-/* Admin navigation styles */
 .admin-nav {
   display: flex;
   gap: 8px;
@@ -453,8 +427,31 @@
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 
-/* profile panel specific tweaks - reuse .card-base visuals */
+
 .admin-profile-panel {
   margin: 12px 0 18px 0;
   padding: 16px;
+}
+
+
+@media (max-width: 900px) {
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .admin-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .modal .form-actions.modal-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .modal .form-actions.modal-actions .btn {
+    width: 100%;
+  }
 }

@@ -1,4 +1,4 @@
-/* BrowseView Dark Theme Styles */
+
 
 .browse-container {
   background-color: #121212;
@@ -56,10 +56,10 @@
   display: block;
   transition: transform 0.3s ease;
   background-color: #1f1f1f;
-  /* Fallback background in case image doesn't load */
+  
 }
 
-/* Loading state and error handling */
+
 .card-image::before {
   content: "";
   position: absolute;
@@ -116,12 +116,47 @@
   font-size: 15px;
 }
 
-/* reverse layout: image on right */
+
 .card.reverse {
   flex-direction: row-reverse;
 }
 
-/* small screens: stack */
+
+.badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(160, 216, 248, 0.15);
+  color: #a0d8f8;
+  font-weight: 700;
+  border: 1px solid rgba(160, 216, 248, 0.3);
+}
+
+
+.wrap::before {
+  content: "";
+  display: block;
+  margin-bottom: 20px;
+}
+
+
+.card * {
+  background-color: transparent;
+}
+
+
+.card:focus-within {
+  outline: 2px solid #a0d8f8;
+  outline-offset: 2px;
+}
+
+
+.card-image img {
+  background-color: #1f1f1f;
+}
+
+
 @media (max-width: 800px) {
   .browse-container {
     padding: 20px 15px;
@@ -152,42 +187,6 @@
   }
 }
 
-/* Nice small decorations */
-.badge {
-  display: inline-block;
-  font-size: 12px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(160, 216, 248, 0.15);
-  color: #a0d8f8;
-  font-weight: 700;
-  border: 1px solid rgba(160, 216, 248, 0.3);
-}
-
-/* Additional styling for better dark theme integration */
-.wrap::before {
-  content: "";
-  display: block;
-  margin-bottom: 20px;
-}
-
-/* Ensure consistent background for all elements */
-.card * {
-  background-color: transparent;
-}
-
-/* Focus states for accessibility */
-.card:focus-within {
-  outline: 2px solid #a0d8f8;
-  outline-offset: 2px;
-}
-
-/* Loading state for images */
-.card-image img {
-  background-color: #1f1f1f;
-}
-
-/* Enhanced mobile responsiveness */
 @media (max-width: 600px) {
   .browse-container {
     padding: 15px 10px;

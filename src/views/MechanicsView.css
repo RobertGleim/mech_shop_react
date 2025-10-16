@@ -223,7 +223,7 @@
   color: #b0b0b0;
 }
 
-/* Responsive */
+
 @media (max-width: 768px) {
   .mechanic-container {
     padding: 20px 15px;
@@ -264,7 +264,6 @@
   }
 }
 
-/* For phones */
 @media (max-width: 600px) {
   .mechanic-card {
     padding: 20px;

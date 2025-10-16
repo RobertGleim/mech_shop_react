@@ -94,6 +94,13 @@
   color: #666666;
 }
 
+
+.autofilled {
+  background-color: rgba(160, 216, 248, 0.1);
+  border-color: #a0d8f8;
+  color: #f5f5f5;
+}
+
 .register-btn {
   padding: 14px 24px;
   background: linear-gradient(135deg, #2c2c2c 0%, #3d3d3d 100%);
@@ -121,6 +128,37 @@
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+}
+
+
+.register-btn:disabled {
+  position: relative;
+  overflow: hidden;
+}
+
+.register-btn:disabled::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 .alert {
@@ -172,10 +210,8 @@
   margin-bottom: 24px;
   justify-content: center;
   align-items: center;
-
-  /* match card background and feel recessed */
   background: #2c2c2c;
-  padding: 8px; /* slightly larger padding to contain button shadows */
+  padding: 8px;
   border-radius: 10px;
   border: none;
   box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.6);
@@ -197,8 +233,6 @@
   font-weight: 600;
   cursor: pointer;
   transition: box-shadow 0.12s ease, color 0.12s ease, background 0.12s ease;
-
-  /* default: inset (pressed) look */
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7);
   margin: 0;
   box-sizing: border-box;
@@ -209,7 +243,6 @@
   background: linear-gradient(135deg, #323232 0%, #3f3f3f 100%);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6),
     0 -1px 0 rgba(255, 255, 255, 0.03) inset;
-  /* no transform so button remains inside switch box */
 }
 
 .switch-btn:hover:not(.active) {
@@ -218,7 +251,22 @@
   box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.75);
 }
 
-/* Responsive Design */
+
+.form-group input:valid {
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.form-group input:invalid:not(:placeholder-shown) {
+  border-color: rgba(220, 38, 38, 0.5);
+}
+
+.form-group:focus-within label {
+  color: #a0d8f8;
+}
+
+
+
+
 @media (max-width: 600px) {
   .form-row {
     grid-template-columns: 1fr;
@@ -238,53 +286,9 @@
   }
 }
 
+
 @media (max-width: 480px) {
   .register-wrapper {
     max-width: 100%;
   }
-}
-
-/* Loading Animation */
-.register-btn:disabled {
-  position: relative;
-  overflow: hidden;
-}
-
-.register-btn:disabled::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.1),
-    transparent
-  );
-  animation: loading 1.5s infinite;
-}
-
-@keyframes loading {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 100%;
-  }
-}
-
-/* Form Validation States */
-.form-group input:valid {
-  border-color: rgba(34, 197, 94, 0.5);
-}
-
-.form-group input:invalid:not(:placeholder-shown) {
-  border-color: rgba(220, 38, 38, 0.5);
-}
-
-/* Focus within form group */
-.form-group:focus-within label {
-  color: #a0d8f8;
 }

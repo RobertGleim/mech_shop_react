@@ -1,17 +1,15 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import NavBar from "./components/NavBar/NavBar"
-import HomeView from "./views/HomeView"
-import LoginView from "./views/LoginView"
-import RegisterView from "./views/RegisterView"
-import BrowseView from "./views/BrowseView"
-import ContactView from "./views/ContactView"
-import CustomerView from "./views/CustomerView"
-import MechanicsView from "./views/MechanicsView"
-import AdminView from "./views/AdminView"
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import NavBar from "./components/NavBar/NavBar";
+import HomeView from "./views/HomeView";
+import LoginView from "./views/LoginView";
+import RegisterView from "./views/RegisterView";
+import BrowseView from "./views/BrowseView";
+import ContactView from "./views/ContactView";
+import CustomerView from "./views/CustomerView";
+import MechanicsView from "./views/MechanicsView";
+import AdminView from "./views/AdminView";
 
 function App() {
-  
-
   return (
     <BrowserRouter>
       <NavBar />
@@ -26,9 +24,7 @@ function App() {
         <Route path="/Admin" element={<AdminView />} />
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
-
- 
+export default App;

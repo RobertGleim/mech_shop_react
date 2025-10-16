@@ -170,28 +170,23 @@
 
 .user-type-switch {
     display: flex;
-    gap: 12px;
+    gap: 8px; /* slightly smaller gap so narrower buttons fit */
     margin-bottom: 24px;
     justify-content: center;
-    align-items: center;
-
-    /* make container match card and feel recessed */
-    background: #2C2C2C; /* same as .login-card */
-    padding: 8px;                 /* slightly larger padding to contain button shadows */
-    border-radius: 10px;
-    border: none;
-    box-shadow: inset 0 4px 10px rgba(0,0,0,0.6);
-    overflow: visible;            /* allow button shadows to be visible without clipping */
+    padding: 6px; /* tighten the container */
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 /* buttons sit inside the recessed container */
 .switch-btn {
-    flex: 0 0 auto;
+   
+    max-width: 170px; /* ensure two buttons fit side-by-side */
+    min-width: 100px;   /* prevents labels from collapsing too far */
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 10px 18px;
-    min-width: 90px;             /* consistent button width so they sit nicely inside box */
+    padding: 5px; 
     background: transparent;
     color: #B0B0B0;
     border: none;
@@ -200,19 +195,19 @@
     font-weight: 600;
     cursor: pointer;
     transition: box-shadow 0.12s ease, color 0.12s ease, background 0.12s ease;
-
-    /* default: inset (pressed) look */
     box-shadow: inset 0 2px 6px rgba(0,0,0,0.7);
-    margin: 0;
-    box-sizing: border-box;
 }
+   
+    
+    
+    
 
-/* Active button: outset (raised) appearance using shadow only (no translate) */
+/* Active button: keep a subtle raised look but avoid large external spread that can overhang */
 .switch-btn.active {
     color: #F5F5F5;
     background: linear-gradient(135deg, #323232 0%, #3f3f3f 100%);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.6), 0 -1px 0 rgba(255,255,255,0.03) inset;
-    /* no transform: keep button within container bounds */
+    box-shadow: inset 0 2px 6px rgba(255,255,255,0.02), 0 2px 6px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.03);
 }
 
 /* hover on non-active slightly change inset (no translate) */
@@ -235,6 +230,17 @@
     
     .login-header h2 {
         font-size: 0.9rem;
+    }
+}
+
+/* Responsive: allow buttons to flex on very small screens */
+@media (max-width: 420px) {
+    .switch-btn {
+        flex: 1 1 0;    /* allow buttons to share available space */
+        width: auto;
+        min-width: 0;
+        max-width: 100%;
+        padding: 10px 12px;
     }
 }
 

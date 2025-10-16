@@ -187,7 +187,8 @@
 .admin-card button {
 	background: #23493c;
 	color: #fff;
-	border: none;
+	border: 1px solid rgba(255,255,255,0.04);
+  margin-bottom: 10px;
 	padding: 0.5rem 0.75rem;
 	border-radius: 8px;
 	cursor: pointer;
@@ -195,7 +196,7 @@
 }
 .customer-actions .btn.delete,
 .mechanic-actions .delete-btn,
-.detail-actions .btn.delete { background: #3f1414; }
+.detail-actions .btn.delete { background: #3f1414; border: 1px solid #201b1b; }
 
 /* Unified detail rows: label/value two-column layout */
 .detail-body {

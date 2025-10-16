@@ -584,8 +584,21 @@ function AdminView() {
         address: '',
         is_admin: false
       })
+
+      // Popup to inform admin of success
+      try {
+        window.alert(`Mechanic created successfully${newMech?.first_name ? `: ${newMech.first_name} ${newMech.last_name || ''}` : ''}`)
+      } catch (alertErr) {
+        console.debug('Alert failed:', alertErr)
+      }
     } catch (err) {
       setMechRegError(err.message || 'Failed to create mechanic')
+      // Popup to inform admin of failure
+      try {
+        window.alert(`Failed to create mechanic: ${err.message || 'Unknown error'}`)
+      } catch (alertErr) {
+        console.debug('Alert failed:', alertErr)
+      }
     } finally {
       setMechRegLoading(false)
     }
@@ -621,8 +634,21 @@ function AdminView() {
       setShowCustomers(true)
       setShowCustomerRegister(false)
       setCustomerRegisterForm({ first_name: '', last_name: '', email: '', password: '', phone: '', address: '' })
+
+      // Popup to inform admin of success
+      try {
+        window.alert(`Customer created successfully${newCust?.first_name ? `: ${newCust.first_name} ${newCust.last_name || ''}` : ''}`)
+      } catch (alertErr) {
+        console.debug('Alert failed:', alertErr)
+      }
     } catch (err) {
       setCustRegError(err.message || 'Failed to create customer')
+      // Popup to inform admin of failure
+      try {
+        window.alert(`Failed to create customer: ${err.message || 'Unknown error'}`)
+      } catch (alertErr) {
+        console.debug('Alert failed:', alertErr)
+      }
     } finally {
       setCustRegLoading(false)
     }

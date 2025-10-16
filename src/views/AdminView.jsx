@@ -9,7 +9,6 @@ function AdminView() {
   const fetchAbortRef = useRef(null);
   const navigatedRef = useRef(false);
 
-  // Use dev proxy when in development; only call VITE_API_URL in production
   const apiBase = import.meta.env.DEV ? "" : import.meta.env.VITE_API_URL || "";
   const buildUrl = React.useCallback(
     (path) => {
@@ -20,7 +19,6 @@ function AdminView() {
   );
   const credentialsMode = apiBase ? "omit" : "include";
 
-  // Helper to read token from multiple possible places and keys
   const getAuthToken = () => {
     // Always check 'token' first
     let token = null;
@@ -36,11 +34,10 @@ function AdminView() {
         /* Ignore errors reading sessionStorage */
       }
     if (!token) {
-      // Try cookie named 'token'
       const cookieMatch = document.cookie.match(/(?:^|;\s*)token=([^;]+)/);
       if (cookieMatch) token = decodeURIComponent(cookieMatch[1]);
     }
-    // Fallback to other keys if still not found
+
     if (!token) {
       const keys = ["access_token", "authToken", "Authorization"];
       for (const k of keys) {
@@ -58,7 +55,7 @@ function AdminView() {
         }
       }
     }
-    // Try URL query param ?token=...
+
     if (!token) {
       try {
         const urlParams = new URLSearchParams(window.location.search);
@@ -70,13 +67,10 @@ function AdminView() {
     return token;
   };
 
-  // Unified fetch wrapper: always set Authorization header; if calling external API (apiBase set),
-  // also append ?token=... as fallback. If token missing, navigate to login and reject.
   const fetchWithAuth = React.useCallback(
     async (path, opts = {}) => {
       const token = getAuthToken();
       if (!token) {
-        // navigate once and return rejected promise for callers to handle
         if (!navigatedRef.current) {
           navigatedRef.current = true;
           navigate("/login");
@@ -84,16 +78,13 @@ function AdminView() {
         return Promise.reject(new Error("Token is missing!"));
       }
 
-      // Merge headers
       const headers = Object.assign({}, opts.headers || {}, {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
       });
 
-      // Build URL
       let url = buildUrl(path);
 
-      // If calling external API (full URL), include token as query param as fallback
       if (apiBase) {
         try {
           const urlObj = new URL(url);
@@ -102,7 +93,6 @@ function AdminView() {
             url = urlObj.toString();
           }
         } catch {
-          // If URL parsing fails, skip adding param
           console.debug("fetchWithAuth: could not append token param");
         }
       }
@@ -125,14 +115,12 @@ function AdminView() {
     [apiBase, credentialsMode, navigate, buildUrl]
   );
 
-  // Admin profile state
   const [admin, setAdmin] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  // new: toggle between "My Profile" and management sections
+
   const [showAdminProfile, setShowAdminProfile] = useState(true);
 
-  // Customers state
   const [customers, setCustomers] = useState([]);
   const [customersLoading, setCustomersLoading] = useState(false);
   const [customersError, setCustomersError] = useState("");
@@ -170,11 +158,9 @@ function AdminView() {
   const [mechanicEditError, setMechanicEditError] = useState("");
   const [selectedMechanic, setSelectedMechanic] = useState(null);
 
-  // Mechanics visibility control (mirror customers behaviour)
   const [showMechanics, setShowMechanics] = useState(false);
   const hideMechanics = () => setShowMechanics(false);
 
-  // New state for mechanic registration (admin only)
   const [showMechanicRegister, setShowMechanicRegister] = useState(false);
   const [mechanicRegisterForm, setMechanicRegisterForm] = useState({
     first_name: "",
@@ -188,7 +174,6 @@ function AdminView() {
   const [mechRegLoading, setMechRegLoading] = useState(false);
   const [mechRegError, setMechRegError] = useState("");
 
-  // New state for customer registration (admin only)
   const [showCustomerRegister, setShowCustomerRegister] = useState(false);
   const [customerRegisterForm, setCustomerRegisterForm] = useState({
     first_name: "",
@@ -201,7 +186,6 @@ function AdminView() {
   const [custRegLoading, setCustRegLoading] = useState(false);
   const [custRegError, setCustRegError] = useState("");
 
-  // Helpers to open forms and close other panels
   const openMechanicForm = () => {
     setShowMechanicRegister(true);
     setShowCustomerRegister(false);
@@ -290,7 +274,6 @@ function AdminView() {
       });
   }, [navigate, fetchWithAuth]);
 
-  // Fetch all customers from the API (admin-only)
   const fetchCustomers = () => {
     setCustomersLoading(true);
     setCustomersError("");
@@ -306,10 +289,8 @@ function AdminView() {
       return;
     }
 
-    // Use trailing slash to avoid Flask redirect that can drop Authorization header
     fetchWithAuth("/customers/")
       .then(async (res) => {
-        // Always try to parse JSON for debugging
         let parsed = null;
         try {
           parsed = await res.clone().json();
@@ -346,14 +327,10 @@ function AdminView() {
             errBody?.message || `HTTP ${res.status}: ${res.statusText}`
           );
         }
-        // Return parsed JSON for next then()
+
         return parsed;
       })
       .then((data) => {
-        // Normalize multiple possible shapes:
-        // 1) array: [...customers]
-        // 2) object with key: { customers: [...] }
-        // 3) object with nested: { customers: { data: [...] } }
         let list = [];
         if (!data) {
           list = [];
@@ -364,16 +341,14 @@ function AdminView() {
           else if (data.customers.data && Array.isArray(data.customers.data))
             list = data.customers.data;
         } else if (data.data && Array.isArray(data.data)) {
-          // in case some serializers wrap results in data
           list = data.data;
         } else {
-          // fallback: if object but not array, try to coerce values
           list = Array.isArray(data) ? data : [];
         }
 
         console.debug("fetchCustomers: normalized list length", list.length);
         setCustomers(list);
-        // show list after successful load
+
         setShowCustomers(true);
         setCustomersLoading(false);
       })
@@ -384,7 +359,6 @@ function AdminView() {
       });
   };
 
-  // Delete a customer
   const deleteCustomer = (customerId) => {
     if (!confirm("Are you sure you want to delete this customer?")) return;
 
@@ -407,9 +381,8 @@ function AdminView() {
       });
   };
 
-  // Start editing a customer
   const startEdit = (customer) => {
-    setSelectedCustomer(customer); // show details when editing
+    setSelectedCustomer(customer);
     setEditingCustomer(customer);
     setEditForm({
       first_name: customer.first_name || "",
@@ -420,7 +393,6 @@ function AdminView() {
     setEditError("");
   };
 
-  // Update a customer
   const updateCustomer = async () => {
     if (!editingCustomer) return;
 
@@ -445,7 +417,7 @@ function AdminView() {
           `HTTP ${res.status}`;
         throw new Error(msg);
       }
-      // Normalize response to a customer object
+
       let customerObj = null;
       if (!parsed) {
         customerObj = { ...editingCustomer, ...editForm };
@@ -461,7 +433,7 @@ function AdminView() {
       } else {
         customerObj = parsed;
       }
-      // Ensure id remains correct when API returns partial
+
       if (!customerObj.id) customerObj.id = editingCustomer.id;
       setCustomers((prev) =>
         prev.map((c) => (c.id === editingCustomer.id ? customerObj : c))
@@ -501,7 +473,6 @@ function AdminView() {
         return;
       }
 
-      // changed: request collection with trailing slash to avoid redirects
       const resp = await fetchWithAuth("/mechanics/", {
         signal: abortController.signal,
       });
@@ -528,7 +499,7 @@ function AdminView() {
 
       const data = await resp.json();
       setMechanics(data || []);
-      // show mechanics list after successful load
+
       setShowMechanics(true);
       setMechanicsLoading(false);
     } catch (err) {
@@ -546,14 +517,12 @@ function AdminView() {
     }
   }, [errorMessage, navigate, fetchWithAuth]);
 
-  // Delete a mechanic
   const deleteMechanic = (mechanicId) => {
     if (!confirm("Are you sure you want to delete this mechanic?")) return;
 
     fetchWithAuth(`/mechanics/${mechanicId}`, { method: "DELETE" })
       .then((res) => {
         if (!res.ok) {
-          // If path-based delete fails, try body-based delete as fallback
           return fetchWithAuth("/mechanics/", {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
@@ -574,7 +543,6 @@ function AdminView() {
       });
   };
 
-  // Start editing a mechanic
   const startMechanicEdit = (mechanic) => {
     setEditingMechanic(mechanic);
     setMechanicEditForm({
@@ -588,20 +556,18 @@ function AdminView() {
     setMechanicEditError("");
   };
 
-  // Update a mechanic
   const updateMechanic = async () => {
     if (!editingMechanic) return;
 
     setMechanicEditLoading(true);
     setMechanicEditError("");
     try {
-      // First try path-based update
       let resp = await fetchWithAuth(`/mechanics/${editingMechanic.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(mechanicEditForm),
       });
-      // If not found, fallback to body-based update
+
       if (!resp.ok && resp.status === 404) {
         resp = await fetchWithAuth("/mechanics/", {
           method: "PUT",
@@ -625,7 +591,7 @@ function AdminView() {
           `HTTP ${resp.status}`;
         throw new Error(msg);
       }
-      // Normalize updated mechanic object
+
       let mechObj = null;
       if (!parsed) mechObj = { ...editingMechanic, ...mechanicEditForm };
       else if (parsed.mechanic) mechObj = parsed.mechanic;
@@ -647,14 +613,12 @@ function AdminView() {
     }
   };
 
-  // Create mechanic (admin-only)
   const createMechanic = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     setMechRegError("");
     setMechRegLoading(true);
 
     try {
-      // prepare body: ensure salary is numeric if provided
       const body = { ...mechanicRegisterForm };
       if (body.salary === "") delete body.salary;
       else body.salary = Number(body.salary);
@@ -665,7 +629,6 @@ function AdminView() {
         body: JSON.stringify(body),
       });
 
-      // handle non-OK
       let parsed = null;
       try {
         parsed = await res.clone().json();
@@ -683,12 +646,11 @@ function AdminView() {
         throw new Error(msg);
       }
 
-      // Success: parsed should be the new mechanic object
       const newMech =
         parsed && typeof parsed === "object" ? parsed : await res.json();
       setMechanics((prev) => (prev ? [...(prev || []), newMech] : [newMech]));
       setShowMechanicRegister(false);
-      // clear form
+
       setMechanicRegisterForm({
         first_name: "",
         last_name: "",
@@ -699,7 +661,6 @@ function AdminView() {
         is_admin: false,
       });
 
-      // Popup to inform admin of success
       try {
         window.alert(
           `Mechanic created successfully${
@@ -713,7 +674,7 @@ function AdminView() {
       }
     } catch (err) {
       setMechRegError(err.message || "Failed to create mechanic");
-      // Popup to inform admin of failure
+
       try {
         window.alert(
           `Failed to create mechanic: ${err.message || "Unknown error"}`
@@ -726,14 +687,12 @@ function AdminView() {
     }
   };
 
-  // Create customer (admin-only)
   const createCustomer = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     setCustRegError("");
     setCustRegLoading(true);
 
     try {
-      // prepare body
       const body = { ...customerRegisterForm };
 
       const res = await fetchWithAuth("/customers/", {
@@ -761,7 +720,7 @@ function AdminView() {
 
       const newCust =
         parsed && typeof parsed === "object" ? parsed : await res.json();
-      // append to list and ensure list visible
+
       setCustomers((prev) => (prev ? [...(prev || []), newCust] : [newCust]));
       setShowCustomers(true);
       setShowCustomerRegister(false);
@@ -774,7 +733,6 @@ function AdminView() {
         address: "",
       });
 
-      // Popup to inform admin of success
       try {
         window.alert(
           `Customer created successfully${
@@ -788,7 +746,7 @@ function AdminView() {
       }
     } catch (err) {
       setCustRegError(err.message || "Failed to create customer");
-      // Popup to inform admin of failure
+
       try {
         window.alert(
           `Failed to create customer: ${err.message || "Unknown error"}`
@@ -821,7 +779,6 @@ function AdminView() {
           <p>Phone: {admin?.phone || "Not provided"}</p>
         </div>
 
-        {/* Admin-only header actions */}
         {admin?.is_admin && (
           <div className="admin-header-actions">
             <a
@@ -853,7 +810,6 @@ function AdminView() {
         )}
       </div>
 
-      {/* Admin navigation: My Profile / Management */}
       <div className="admin-nav">
         <button
           className={showAdminProfile ? "active" : ""}
@@ -869,7 +825,6 @@ function AdminView() {
         </button>
       </div>
 
-      {/* show profile panel when toggled; otherwise show existing management UI */}
       {showAdminProfile ? (
         <div className="admin-profile-panel card-base">
           <h3>My Profile</h3>
@@ -911,7 +866,6 @@ function AdminView() {
           </div>
         </div>
       ) : (
-        // existing management UI (customers/mechanics)
         <>
           <div className="admin-actions">
             <div className="section">
@@ -922,7 +876,7 @@ function AdminView() {
                 <button onClick={fetchCustomers} disabled={customersLoading}>
                   {customersLoading ? "Loading..." : "Load Customers"}
                 </button>
-                {/* small inline close button to hide the loaded customers */}
+
                 <button
                   aria-label="Hide customers"
                   onClick={hideCustomers}
@@ -937,7 +891,6 @@ function AdminView() {
                 <div className="error-message">{customersError}</div>
               )}
 
-              {/* compact list: only show when explicitly visible */}
               {showCustomers && customers.length > 0 && (
                 <div className="customers-list">
                   <h4>All Customers ({customers.length})</h4>
@@ -965,7 +918,6 @@ function AdminView() {
                     ))}
                   </div>
 
-                  {/* Selected customer detail panel (only one shown at a time) */}
                   {selectedCustomer && (
                     <div className="detail-panel">
                       <div className="detail-header">
@@ -987,7 +939,6 @@ function AdminView() {
                       <div className="detail-body">
                         {editingCustomer &&
                         editingCustomer.id === selectedCustomer.id ? (
-                          // Inline edit form for customer
                           <form
                             className="inline-edit-form"
                             onSubmit={(e) => {
@@ -1178,7 +1129,6 @@ function AdminView() {
                     ))}
                   </div>
 
-                  {/* Selected mechanic detail panel */}
                   {selectedMechanic && (
                     <div className="detail-panel">
                       <div className="detail-header">
@@ -1200,7 +1150,6 @@ function AdminView() {
                       <div className="detail-body">
                         {editingMechanic &&
                         editingMechanic.id === selectedMechanic.id ? (
-                          // Inline edit form for mechanic
                           <form
                             className="inline-edit-form"
                             onSubmit={(e) => {
@@ -1378,7 +1327,6 @@ function AdminView() {
                 </div>
               )}
 
-              {/* Modal mechanic registration form (centered overlay) */}
               {showMechanicRegister && (
                 <div
                   className="modal-overlay"
@@ -1532,7 +1480,6 @@ function AdminView() {
                 </div>
               )}
 
-              {/* Modal customer registration form (centered overlay) */}
               {showCustomerRegister && (
                 <div
                   className="modal-overlay"

@@ -38,8 +38,6 @@ export default function LoginView() {
       const endpoint =
         userType === "customer" ? "/customers/login" : "/mechanics/login";
       const url = buildUrl(endpoint);
-      console.log("Login endpoint:", url); // <-- Added
-      console.log("Login payload:", payload); // <-- Added
 
       const resp = await fetch(url, {
         method: "POST",
@@ -51,14 +49,11 @@ export default function LoginView() {
       let data = null;
       try {
         data = await resp.json();
-      } catch (jsonErr) {
-        console.log("Error parsing JSON response:", jsonErr); // <-- Added
+      } catch {
         data = null;
       }
 
       if (!resp.ok) {
-        console.log("Login failed response:", resp); // <-- Added
-        console.log("Login failed data:", data); // <-- Added
         const msg =
           data?.message || data?.error || `Login failed (${resp.status})`;
         setErrorMessage(msg);
@@ -67,7 +62,6 @@ export default function LoginView() {
 
       const token = data?.token || data?.access_token || data?.accessToken;
       if (!token) {
-        console.log("No token returned from server:", data); // <-- Added
         setErrorMessage("No token returned from server.");
         return;
       }
@@ -82,8 +76,8 @@ export default function LoginView() {
         document.cookie = `token=${encodeURIComponent(token)};path=/;max-age=${
           7 * 24 * 60 * 60
         }`;
-      } catch (storageErr) {
-        console.log("Error storing token:", storageErr); // <-- Added
+      } catch {
+        // Intentionally left blank: ignore storage errors
       }
 
       if (typeof data.id !== "undefined")
@@ -105,7 +99,6 @@ export default function LoginView() {
       else if (role === "customer") navigate("/");
       else navigate("/");
     } catch (err) {
-      console.log("Network/login error:", err); // <-- Added
       setErrorMessage(err?.message || "Network error during login.");
     } finally {
       setLoading(false);

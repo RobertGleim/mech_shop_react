@@ -773,7 +773,12 @@ function AdminView() {
   return (
     <div className="admin-view">
       <div className="admin-header">
-        <h1>Admin Panel</h1>
+        <div className="brand">
+          {/* Put your logo file in public/ (e.g. public/logo.png or public/assets/logo.png)
+               Update the src below if your path differs. */}
+          <img src="/logo.png" alt="Mechanic Shop" className="brand-logo" />
+          <h1>Admin Panel</h1>
+        </div>
         <div className="admin-info">
           <h2>
             Welcome, {admin?.first_name} {admin?.last_name}

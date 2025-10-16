@@ -47,27 +47,61 @@ export default function RegisterView() {
 	}
 
 	return (
-		<div className="contact-container">
-			<div className="contact-wrapper">
-				<div className="contact-card">
-					<h3>Create an Account</h3>
+		<div className="register-container">
+			<div className="register-wrapper">
+				<div className="register-card">
+					<div className="register-header">
+						<h1>Create an Account</h1>
+						<h2>Join Cool X3 Mechanics</h2>
+					</div>
 
 					{success ? (
-						<div className="success-message">Account created. Redirecting to login...</div>
+						<div className="alert alert-success">Account created. Redirecting to login...</div>
 					) : (
-						<form onSubmit={handleSubmit}>
-							{error && <div className="error-message">{error}</div>}
+						<form className="register-form" onSubmit={handleSubmit}>
+							{error && <div className="alert alert-error">{error}</div>}
 
-							<input name="first_name" placeholder="First name" value={form.first_name} onChange={handleChange} required />
-							<input name="last_name" placeholder="Last name" value={form.last_name} onChange={handleChange} required />
-							<input name="email" type="email" placeholder="Email" value={form.email} onChange={handleChange} required />
-							<input name="password" type="password" placeholder="Password" value={form.password} onChange={handleChange} required />
-							<input name="phone" placeholder="Phone (optional)" value={form.phone} onChange={handleChange} />
-							<input name="address" placeholder="Address (optional)" value={form.address} onChange={handleChange} />
+							<div className="form-row">
+								<div className="form-group">
+									<label>First Name</label>
+									<input name="first_name" placeholder="First name" value={form.first_name} onChange={handleChange} required />
+								</div>
+								<div className="form-group">
+									<label>Last Name</label>
+									<input name="last_name" placeholder="Last name" value={form.last_name} onChange={handleChange} required />
+								</div>
+							</div>
 
-							<button type="submit" disabled={loading}>{loading ? 'Creating...' : 'Create Account'}</button>
+							<div className="form-group">
+								<label>Email</label>
+								<input name="email" type="email" placeholder="Email" value={form.email} onChange={handleChange} required />
+							</div>
+
+							<div className="form-group">
+								<label>Password</label>
+								<input name="password" type="password" placeholder="Password" value={form.password} onChange={handleChange} required />
+							</div>
+
+							<div className="form-row">
+								<div className="form-group">
+									<label>Phone</label>
+									<input name="phone" placeholder="Phone (optional)" value={form.phone} onChange={handleChange} />
+								</div>
+								<div className="form-group">
+									<label>Address</label>
+									<input name="address" placeholder="Address (optional)" value={form.address} onChange={handleChange} />
+								</div>
+							</div>
+
+							<button type="submit" className="register-btn" disabled={loading}>
+								{loading ? 'Creating...' : 'Create Account'}
+							</button>
 						</form>
 					)}
+
+					<div className="register-footer" style={{ marginTop: 16 }}>
+						<p>Already have an account? <button type="button" className="login-link" onClick={() => navigate('/login')}>Sign in</button></p>
+					</div>
 				</div>
 			</div>
 		</div>

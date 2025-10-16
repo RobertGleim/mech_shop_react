@@ -78,6 +78,12 @@ export default function MechanicsView() {
 		window.dispatchEvent(new Event('login-status-change'))
 	}
 
+	// small helper to mask password when shown in profile
+	const maskedPassword = (pw) => (pw ? '••••••' : 'Not set')
+
+	// helper to capitalize first letter of a string
+	const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+
 	if (loading) return <div className="mechanic-container">Loading...</div>
 
 	if (!mechanic) {
@@ -94,12 +100,12 @@ export default function MechanicsView() {
 	return (
 		<div className="mechanic-container">
 			<div className="mechanic-wrapper">
-				<h1>Welcome {mechanic.first_name}!</h1>
+				<h1>Welcome {capitalize(mechanic.first_name)}!</h1>
 				<div className="mechanic-navigation">
-					<button className={showProfile ? 'active' : ''} onClick={() => setShowProfile(true)}>
+					{/* <button className={showProfile ? 'active' : ''} onClick={() => setShowProfile(true)}>
 						My Profile
-					</button>
-					<button
+					</button> */}
+					{/* <button
 						className={!showProfile ? 'active' : ''}
 						onClick={() => {
 							setShowProfile(false)
@@ -107,39 +113,53 @@ export default function MechanicsView() {
 						}}
 					>
 						My Jobs
-					</button>
-					<button onClick={handleLogout} className="logout-btn">Logout</button>
+					</button> */}
+					{/* <button onClick={handleLogout} className="logout-btn">Logout</button> */}
 				</div>
 
 				{showProfile ? (
-					<div className="profile-section">
-						<h3>Profile</h3>
-						<div className="profile-display">
-							<div className="form-group">
-								<label>First Name:</label>
-								<span>{mechanic.first_name}</span>
-							</div>
-							<div className="form-group">
-								<label>Last Name:</label>
-								<span>{mechanic.last_name}</span>
-							</div>
-							<div className="form-group">
-								<label>Email:</label>
-								<span>{mechanic.email}</span>
-							</div>
-							<div className="form-group">
-								<label>Salary:</label>
-								<span>${mechanic.salary}</span>
-							</div>
-							<div className="form-group">
-								<label>Address:</label>
-								<span>{mechanic.address || 'Not provided'}</span>
-							</div>
+					// Profile card updated to follow swagger: name, email, password, salary, address
+					<div className="customer-card-profile">
+						<h3>Profile Information</h3>
+
+						<div className="info-section">
+							<p><strong>Name:</strong> {mechanic.first_name} {mechanic.last_name}</p>
+							<p><strong>Email:</strong> {mechanic.email}</p>
+							<p><strong>Password:</strong> {maskedPassword(mechanic.password)}</p>
+							<p><strong>Salary:</strong> ${mechanic.salary}</p>
+							<p><strong>Address:</strong> {mechanic.address || 'Not provided'}</p>
+						</div>
+
+						<div className="buttons-section" style={{ marginTop: 12 }}>
+							<button
+								className="mechanic-btn"
+								onClick={() => {
+									setShowProfile(false)
+									loadJobs()
+								}}
+							>
+								View Jobs
+							</button>
+							<button className="mechanic-btn" onClick={handleLogout}>Logout</button>
+						</div>
+
+						<div className="profile-info-note" style={{ marginTop: 16 }}>
+							<p className="profile-note-title">📝 Profile Information is Read-Only</p>
+							<small className="profile-note-text">
+								For security reasons, profile updates are managed by administration.
+								If you need to change your personal information, please contact your manager or support.
+							</small>
 						</div>
 					</div>
 				) : (
 					<div className="jobs-section">
 						<h3>My Assigned Jobs</h3>
+
+						{/* Back to profile button so mechanic can return to profile view */}
+						<div className="buttons-section" style={{ marginTop: 12 }}>
+							<button className="mechanic-btn" onClick={() => setShowProfile(true)}>Back to Profile</button>
+						</div>
+
 						{jobsLoading ? (
 							<div>Loading jobs...</div>
 						) : jobs.length === 0 ? (

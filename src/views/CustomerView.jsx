@@ -184,6 +184,13 @@ function CustomerView() {
     });
   }
 
+  // Helper to title-case first & last name
+  const capitalizeName = (first, last) => {
+    const cap = (s) => (typeof s === 'string' && s.length) ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : ''
+    const parts = [cap(first), cap(last)].filter(Boolean)
+    return parts.join(' ')
+  }
+
   if (loading) {
     return <div className="customer-container">Loading...</div>
   }
@@ -193,134 +200,131 @@ function CustomerView() {
   }
 
   return (
-    <div className="customer-container">
-      <div className="customer-wrapper">
-        <h1>Welcome {customer.firstName}!</h1>
-        <h2>Your Profile</h2>
+		<div className="customer-container">
+			<div className="customer-wrapper">
+			
+				<h1>Welcome {capitalizeName(customer.firstName, customer.lastName)}!</h1>
+				<h2>Your Profile</h2>
 
-        {updateSuccess && (
-          <div className="success-message">
-            Your information has been updated successfully!
-          </div>
-        )}
+				{updateSuccess && (
+					<div className="success-message">
+						Your information has been updated successfully!
+					</div>
+				)}
 
-        <div className="customer-card">
-          <h3>Customer Information</h3>
-          
-          {!editMode ? (
-            // View Mode
-            <>
-              <div className="info-section">
-                <p><strong>Name:</strong> {customer.firstName} {customer.lastName}</p>
-                <p><strong>Email:</strong> {customer.email}</p>
-                <p><strong>Phone:</strong> {customer.phone}</p>
-                <p><strong>Address:</strong> {customer.address}</p>
-              </div>
+				
+				<div className="customer-card-profile">
+					<h3>Customer Information</h3>
 
-              <div className="buttons-section">
-                <button 
-                  className="customer-btn edit-btn" 
-                  onClick={() => setEditMode(true)}
-                >
-                  Update Profile
-                </button>
-                <button 
-                  className="customer-btn"
-                  onClick={handleScheduleService}
-                >
-                  Schedule Service
-                </button>
-                <button className="customer-btn">View History</button>
-              </div>
+					{!editMode ? (
+						// View Mode
+						<>
+							<div className="info-section">
+								<p><strong>Name:</strong> {customer.firstName} {customer.lastName}</p>
+								<p><strong>Email:</strong> {customer.email}</p>
+								<p><strong>Phone:</strong> {customer.phone}</p>
+								<p><strong>Address:</strong> {customer.address}</p>
+							</div>
 
-              <div className="profile-info-note">
-                <p className="profile-note-title">📝 Profile Information is Read-Only</p>
-                <small className="profile-note-text">
-                  For security reasons, profile updates are managed by administration. 
-                  If you need to change your personal information, please contact your manager 
-                  or HR department.
-                </small>
-              </div>
-            </>
-          ) : (
-            // Edit Mode
-            <form onSubmit={handleUpdate} className="update-form">
-              {updateError && <div className="error-message">{updateError}</div>}
-              
-              <div className="form-group">
-                <label>First Name</label>
-                <input 
-                  type="text"
-                  name="firstName"
-                  value={updatedInfo.firstName || ''}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Last Name</label>
-                <input 
-                  type="text"
-                  name="lastName"
-                  value={updatedInfo.lastName || ''}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Email</label>
-                <input 
-                  type="email"
-                  name="email"
-                  value={updatedInfo.email || ''}
-                  disabled
-                  className="disabled-input"
-                />
-                <small>Email cannot be changed</small>
-              </div>
-              
-              <div className="form-group">
-                <label>Phone</label>
-                <input 
-                  type="tel"
-                  name="phone"
-                  value={updatedInfo.phone || ''}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Address</label>
-                <input 
-                  type="text"
-                  name="address"
-                  value={updatedInfo.address || ''}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              
-              <div className="form-buttons">
-                <button type="submit" className="customer-btn save-btn">
-                  Save Changes
-                </button>
-                <button 
-                  type="button" 
-                  className="customer-btn cancel-btn"
-                  onClick={handleCancel}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
-      </div>
-    </div>
-  )
+							<div className="buttons-section">
+								<button 
+									className="customer-btn"
+									onClick={handleScheduleService}
+								>
+									Schedule Service
+								</button>
+								<button className="customer-btn">View History</button>
+							</div>
+
+							{/* Profile note moved inside the card below actions */}
+							<div className="profile-info-note">
+								<p className="profile-note-title">📝 Profile Information is Read-Only</p>
+								<small className="profile-note-text">
+									For security reasons, profile updates are managed by administration. 
+									If you need to change your personal information, please contact your manager 
+									or HR department.
+								</small>
+							</div>
+						</>
+					) : (
+						// Edit Mode (not reachable in UI since Update Profile removed)
+						<form onSubmit={handleUpdate} className="update-form">
+							{updateError && <div className="error-message">{updateError}</div>}
+							
+							<div className="form-group">
+								<label>First Name</label>
+								<input 
+									type="text"
+									name="firstName"
+									value={updatedInfo.firstName || ''}
+									onChange={handleChange}
+									required
+								/>
+							</div>
+							
+							<div className="form-group">
+								<label>Last Name</label>
+								<input 
+									type="text"
+									name="lastName"
+									value={updatedInfo.lastName || ''}
+									onChange={handleChange}
+									required
+								/>
+							</div>
+							
+							<div className="form-group">
+								<label>Email</label>
+								<input 
+									type="email"
+									name="email"
+									value={updatedInfo.email || ''}
+									disabled
+									className="disabled-input"
+								/>
+								<small>Email cannot be changed</small>
+							</div>
+							
+							<div className="form-group">
+								<label>Phone</label>
+								<input 
+									type="tel"
+									name="phone"
+									value={updatedInfo.phone || ''}
+									onChange={handleChange}
+									required
+								/>
+							</div>
+							
+							<div className="form-group">
+								<label>Address</label>
+								<input 
+									type="text"
+									name="address"
+									value={updatedInfo.address || ''}
+									onChange={handleChange}
+									required
+								/>
+							</div>
+							
+							<div className="form-buttons">
+								<button type="submit" className="customer-btn save-btn">
+									Save Changes
+								</button>
+								<button 
+									type="button" 
+									className="customer-btn cancel-btn"
+									onClick={handleCancel}
+								>
+									Cancel
+								</button>
+							</div>
+						</form>
+					)}
+				</div>
+			</div>
+		</div>
+	)
 }
 
 export default CustomerView

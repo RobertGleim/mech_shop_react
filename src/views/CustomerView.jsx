@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiUrl } from "../lib/api";
+import { apiFetch } from "../lib/api";
 
 export default function CustomerView() {
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ export default function CustomerView() {
       }
 
       try {
-        const resp = await fetch(apiUrl("/customers/profile"), {
+        const resp = await apiFetch("/customers/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!resp.ok) {
@@ -37,7 +37,10 @@ export default function CustomerView() {
           phone: data.phone,
           address: data.address,
         });
-      } catch {
+      } catch (err) {
+        // apiFetch will have logged attempts; fallback to login on failure
+         
+        console.error("Failed to load profile:", err);
         navigate("/login");
       } finally {
         setLoading(false);

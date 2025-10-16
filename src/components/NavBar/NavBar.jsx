@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import "./NavBar.css";
-import logo from "../../assets/logo.png"; // Adjust path if needed
 
 export default function NavBar() {
   const navigate = useNavigate();
@@ -41,8 +40,8 @@ export default function NavBar() {
     <header>
       <div className="left-section">
         <NavLink to="/">
-          <img src={logo} alt="Cool X3 Mechanics" className="logo" />
-          <h1 className="logo-text">Cool X3 Mechanics</h1>
+          {/* logo asset removed to avoid build errors if asset missing */}
+          <div className="logo-text">Cool X3 Mechanics</div>
         </NavLink>
       </div>
       <nav className="nav-links">

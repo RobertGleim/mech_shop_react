@@ -101,6 +101,8 @@ function AdminView() {
   const [admin, setAdmin] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  // new: toggle between "My Profile" and management sections
+  const [showAdminProfile, setShowAdminProfile] = useState(true)
   
   // Customers state
   const [customers, setCustomers] = useState([])
@@ -685,7 +687,6 @@ function AdminView() {
               Add Mechanic
             </a>
 
-            {/* Add Customer anchor reusing same styling */}
             <a
               href="#add-customer"
               className="add-mechanic-link"
@@ -699,336 +700,372 @@ function AdminView() {
         )}
       </div>
 
-      <div className="admin-actions">
-        <div className="section">
-          <h3>Customer Management</h3>
-          <div style={{display:'inline-flex', alignItems:'center', gap:8}}>
-            <button onClick={fetchCustomers} disabled={customersLoading}>
-              {customersLoading ? 'Loading...' : 'Load Customers'}
-            </button>
-            {/* small inline close button to hide the loaded customers */}
-            <button
-              aria-label="Hide customers"
-              onClick={hideCustomers}
-              className="inline-close-btn"
-              title="Hide customers"
-            >
-              ×
-            </button>
+      {/* Admin navigation: My Profile / Management */}
+      <div className="admin-nav">
+        <button
+          className={showAdminProfile ? 'active' : ''}
+          onClick={() => setShowAdminProfile(true)}
+        >
+          My Profile
+        </button>
+        <button
+          className={!showAdminProfile ? 'active' : ''}
+          onClick={() => setShowAdminProfile(false)}
+        >
+          Management
+        </button>
+      </div>
+      
+      {/* show profile panel when toggled; otherwise show existing management UI */}
+      {showAdminProfile ? (
+        <div className="admin-profile-panel card-base">
+          <h3>My Profile</h3>
+          <div className="detail-body">
+            <div className="detail-row"><div className="detail-label">Name</div><div className="detail-value">{admin?.first_name} {admin?.last_name}</div></div>
+            <div className="detail-row"><div className="detail-label">Email</div><div className="detail-value">{admin?.email}</div></div>
+            <div className="detail-row"><div className="detail-label">Phone</div><div className="detail-value">{admin?.phone || 'Not provided'}</div></div>
+            <div className="detail-row"><div className="detail-label">Address</div><div className="detail-value">{admin?.address || 'Not provided'}</div></div>
+            <div className="detail-row"><div className="detail-label">Admin</div><div className="detail-value">{admin?.is_admin ? 'Yes' : 'No'}</div></div>
           </div>
-
-          {customersError && (
-            <div className="error-message">{customersError}</div>
-          )}
-          
-          {/* compact list: only show when explicitly visible */}
-          {showCustomers && customers.length > 0 && (
-            <div className="customers-list">
-              <h4>All Customers ({customers.length})</h4>
-              <div className="customers-grid">
-                {customers.map(customer => (
-                  <div key={customer.id} className="customer-card">
-                    <div className="customer-info">
-                      <h5 className="card-title">
-                        {customer.first_name} {customer.last_name}
-                        <span className="card-id">#{customer.id}</span>
-                      </h5>
-                      <p className="card-subtext">{customer.email}</p>
-                    </div>
-                    <div className="customer-actions">
-                      <button onClick={() => { setSelectedCustomer(customer); setEditingCustomer(null); }}>
-                        View Details
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Selected customer detail panel (only one shown at a time) */}
-              {selectedCustomer && (
-                <div className="detail-panel">
-                  <div className="detail-header">
-                    <h4>Customer Details: {selectedCustomer.first_name} {selectedCustomer.last_name} <span className="detail-id">#{selectedCustomer.id}</span></h4>
-                    <button aria-label="Close customer details" onClick={() => setSelectedCustomer(null)} className="close-box">&times;</button>
-                  </div>
-                  <div className="detail-body">
-                    {editingCustomer && editingCustomer.id === selectedCustomer.id ? (
-                      // Inline edit form for customer
-                      <form className="inline-edit-form" onSubmit={(e) => { e.preventDefault(); updateCustomer(); }}>
-                        <div className="form-group">
-                          <label>First Name</label>
-                          <input type="text" value={editForm.first_name} onChange={(e) => setEditForm({...editForm, first_name: e.target.value})} required />
-                        </div>
-                        <div className="form-group">
-                          <label>Last Name</label>
-                          <input type="text" value={editForm.last_name} onChange={(e) => setEditForm({...editForm, last_name: e.target.value})} required />
-                        </div>
-                        <div className="form-group">
-                          <label>Email</label>
-                          <input type="email" value={selectedCustomer.email} disabled className="disabled-input" />
-                        </div>
-                        <div className="form-group">
-                          <label>Phone</label>
-                          <input type="text" value={editForm.phone} onChange={(e) => setEditForm({...editForm, phone: e.target.value})} />
-                        </div>
-                        <div className="form-group">
-                          <label>Address</label>
-                          <textarea value={editForm.address} onChange={(e) => setEditForm({...editForm, address: e.target.value})} rows="2" />
-                        </div>
-                        <div className="form-actions">
-                          <button type="submit" className="btn" disabled={editLoading}>{editLoading ? 'Saving...' : 'Save'}</button>
-                          <button type="button" className="btn cancel" onClick={() => setEditingCustomer(null)} disabled={editLoading}>Cancel</button>
-                        </div>
-                      </form>
-                    ) : (
-                      <>
-                        <div className="detail-row"><div className="detail-label">Email</div><div className="detail-value">{selectedCustomer.email}</div></div>
-                        <div className="detail-row"><div className="detail-label">Phone</div><div className="detail-value">{selectedCustomer.phone || 'N/A'}</div></div>
-                        <div className="detail-row"><div className="detail-label">Address</div><div className="detail-value">{selectedCustomer.address || 'N/A'}</div></div>
-                      </>
-                    )}
-                  </div>
-                  <div className="detail-actions">
-                    {!editingCustomer || editingCustomer.id !== selectedCustomer.id ? (
-                      <>
-                        <button onClick={() => startEdit(selectedCustomer)} className="btn">Edit</button>
-                        <button onClick={() => { if (confirm('Delete this customer?')) { deleteCustomer(selectedCustomer.id); setSelectedCustomer(null); } }} className="btn delete">Delete</button>
-                      </>
-                    ) : null}
-                  </div>
-                 </div>
-               )}
-            </div>
-          )}
+          <div style={{marginTop: 12}}>
+            <small style={{color:'#aeb6c2'}}>Profile edits are managed by administration. Use Management tab to manage users.</small>
+          </div>
         </div>
-
-        <div className="section">
-          <h3>Mechanics Management</h3>
-          <div style={{display:'inline-flex', alignItems:'center', gap:8}}>
-            <button onClick={fetchMechanics} disabled={mechanicsLoading}>
-              {mechanicsLoading ? 'Loading...' : 'Load Mechanics'}
-            </button>
-            <button
-              aria-label="Hide mechanics"
-              onClick={hideMechanics}
-              className="inline-close-btn"
-              title="Hide mechanics"
-            >
-              ×
-            </button>
-          </div>
-          
-          {mechanicsError && (
-            <div className="error-message">{mechanicsError}</div>
-          )}
-          
-          {showMechanics && mechanics.length > 0 && (
-            <div className="mechanics-list">
-              <h4>All Mechanics ({mechanics.length})</h4>
-              <div className="mechanics-grid">
-                {mechanics.map(mechanic => (
-                  <div key={mechanic.id} className="mechanic-card">
-                    <div className="mechanic-info">
-                      <h5 className="card-title">
-                        {mechanic.first_name} {mechanic.last_name}
-                        <span className="card-id">#{mechanic.id}</span>
-                      </h5>
-                      <p className="card-subtext">{mechanic.email}</p>
-                    </div>
-                    <div className="mechanic-actions">
-                      <button onClick={() => { setSelectedMechanic(mechanic); setEditingMechanic(null); }}>
-                        View Details
-                      </button>
-                    </div>
-                  </div>
-                ))}
+      ) : (
+        // existing management UI (customers/mechanics)
+        <>
+          <div className="admin-actions">
+            <div className="section">
+              <h3>Customer Management</h3>
+              <div style={{display:'inline-flex', alignItems:'center', gap:8}}>
+                <button onClick={fetchCustomers} disabled={customersLoading}>
+                  {customersLoading ? 'Loading...' : 'Load Customers'}
+                </button>
+                {/* small inline close button to hide the loaded customers */}
+                <button
+                  aria-label="Hide customers"
+                  onClick={hideCustomers}
+                  className="inline-close-btn"
+                  title="Hide customers"
+                >
+                  ×
+                </button>
               </div>
 
-              {/* Selected mechanic detail panel */}
-              {selectedMechanic && (
-                <div className="detail-panel">
-                  <div className="detail-header">
-                    <h4>Mechanic Details: {selectedMechanic.first_name} {selectedMechanic.last_name} <span className="detail-id">#{selectedMechanic.id}</span></h4>
-                    <button aria-label="Close mechanic details" onClick={() => setSelectedMechanic(null)} className="close-box">&times;</button>
+              {customersError && (
+                <div className="error-message">{customersError}</div>
+              )}
+              
+              {/* compact list: only show when explicitly visible */}
+              {showCustomers && customers.length > 0 && (
+                <div className="customers-list">
+                  <h4>All Customers ({customers.length})</h4>
+                  <div className="customers-grid">
+                    {customers.map(customer => (
+                      <div key={customer.id} className="customer-card">
+                        <div className="customer-info">
+                          <h5 className="card-title">
+                            {customer.first_name} {customer.last_name}
+                            <span className="card-id">#{customer.id}</span>
+                          </h5>
+                          <p className="card-subtext">{customer.email}</p>
+                        </div>
+                        <div className="customer-actions">
+                          <button onClick={() => { setSelectedCustomer(customer); setEditingCustomer(null); }}>
+                            View Details
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="detail-body">
-                    {editingMechanic && editingMechanic.id === selectedMechanic.id ? (
-                      // Inline edit form for mechanic
-                      <form className="inline-edit-form" onSubmit={(e) => { e.preventDefault(); updateMechanic(); }}>
-                        <div className="form-group">
-                          <label>First Name</label>
-                          <input type="text" value={mechanicEditForm.first_name} onChange={(e) => setMechanicEditForm({...mechanicEditForm, first_name: e.target.value})} required />
+
+                  {/* Selected customer detail panel (only one shown at a time) */}
+                  {selectedCustomer && (
+                    <div className="detail-panel">
+                      <div className="detail-header">
+                        <h4>Customer Details: {selectedCustomer.first_name} {selectedCustomer.last_name} <span className="detail-id">#{selectedCustomer.id}</span></h4>
+                        <button aria-label="Close customer details" onClick={() => setSelectedCustomer(null)} className="close-box">&times;</button>
+                      </div>
+                      <div className="detail-body">
+                        {editingCustomer && editingCustomer.id === selectedCustomer.id ? (
+                          // Inline edit form for customer
+                          <form className="inline-edit-form" onSubmit={(e) => { e.preventDefault(); updateCustomer(); }}>
+                            <div className="form-group">
+                              <label>First Name</label>
+                              <input type="text" value={editForm.first_name} onChange={(e) => setEditForm({...editForm, first_name: e.target.value})} required />
+                            </div>
+                            <div className="form-group">
+                              <label>Last Name</label>
+                              <input type="text" value={editForm.last_name} onChange={(e) => setEditForm({...editForm, last_name: e.target.value})} required />
+                            </div>
+                            <div className="form-group">
+                              <label>Email</label>
+                              <input type="email" value={selectedCustomer.email} disabled className="disabled-input" />
+                            </div>
+                            <div className="form-group">
+                              <label>Phone</label>
+                              <input type="text" value={editForm.phone} onChange={(e) => setEditForm({...editForm, phone: e.target.value})} />
+                            </div>
+                            <div className="form-group">
+                              <label>Address</label>
+                              <textarea value={editForm.address} onChange={(e) => setEditForm({...editForm, address: e.target.value})} rows="2" />
+                            </div>
+                            <div className="form-actions">
+                              <button type="submit" className="btn" disabled={editLoading}>{editLoading ? 'Saving...' : 'Save'}</button>
+                              <button type="button" className="btn cancel" onClick={() => setEditingCustomer(null)} disabled={editLoading}>Cancel</button>
+                            </div>
+                          </form>
+                        ) : (
+                          <>
+                            <div className="detail-row"><div className="detail-label">Email</div><div className="detail-value">{selectedCustomer.email}</div></div>
+                            <div className="detail-row"><div className="detail-label">Phone</div><div className="detail-value">{selectedCustomer.phone || 'N/A'}</div></div>
+                            <div className="detail-row"><div className="detail-label">Address</div><div className="detail-value">{selectedCustomer.address || 'N/A'}</div></div>
+                          </>
+                        )}
+                      </div>
+                      <div className="detail-actions">
+                        {!editingCustomer || editingCustomer.id !== selectedCustomer.id ? (
+                          <>
+                            <button onClick={() => startEdit(selectedCustomer)} className="btn">Edit</button>
+                            <button onClick={() => { if (confirm('Delete this customer?')) { deleteCustomer(selectedCustomer.id); setSelectedCustomer(null); } }} className="btn delete">Delete</button>
+                          </>
+                        ) : null}
+                      </div>
+                     </div>
+                   )}
+                </div>
+              )}
+            </div>
+
+            <div className="section">
+              <h3>Mechanics Management</h3>
+              <div style={{display:'inline-flex', alignItems:'center', gap:8}}>
+                <button onClick={fetchMechanics} disabled={mechanicsLoading}>
+                  {mechanicsLoading ? 'Loading...' : 'Load Mechanics'}
+                </button>
+                <button
+                  aria-label="Hide mechanics"
+                  onClick={hideMechanics}
+                  className="inline-close-btn"
+                  title="Hide mechanics"
+                >
+                  ×
+                </button>
+              </div>
+              
+              {mechanicsError && (
+                <div className="error-message">{mechanicsError}</div>
+              )}
+              
+              {showMechanics && mechanics.length > 0 && (
+                <div className="mechanics-list">
+                  <h4>All Mechanics ({mechanics.length})</h4>
+                  <div className="mechanics-grid">
+                    {mechanics.map(mechanic => (
+                      <div key={mechanic.id} className="mechanic-card">
+                        <div className="mechanic-info">
+                          <h5 className="card-title">
+                            {mechanic.first_name} {mechanic.last_name}
+                            <span className="card-id">#{mechanic.id}</span>
+                          </h5>
+                          <p className="card-subtext">{mechanic.email}</p>
                         </div>
-                        <div className="form-group">
-                          <label>Last Name</label>
-                          <input type="text" value={mechanicEditForm.last_name} onChange={(e) => setMechanicEditForm({...mechanicEditForm, last_name: e.target.value})} required />
+                        <div className="mechanic-actions">
+                          <button onClick={() => { setSelectedMechanic(mechanic); setEditingMechanic(null); }}>
+                            View Details
+                          </button>
                         </div>
-                        <div className="form-group">
-                          <label>Email</label>
-                          <input type="email" value={mechanicEditForm.email} onChange={(e) => setMechanicEditForm({...mechanicEditForm, email: e.target.value})} required />
-                        </div>
-                        <div className="form-group">
-                          <label>Salary</label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={mechanicEditForm.salary}
-                            onChange={(e) => {
-                              const v = e.target.value
-                              setMechanicEditForm({
-                                ...mechanicEditForm,
-                                salary: v === '' ? '' : parseFloat(v)
-                              })
-                            }}
-                            required
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Address</label>
-                          <textarea value={mechanicEditForm.address} onChange={(e) => setMechanicEditForm({...mechanicEditForm, address: e.target.value})} rows="2" />
-                        </div>
-                        <div className="form-group">
-                          <div className="admin-checkbox-row">
-                            <label className="checkbox-label">
-                              <span className="checkbox-text">Admin</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Selected mechanic detail panel */}
+                  {selectedMechanic && (
+                    <div className="detail-panel">
+                      <div className="detail-header">
+                        <h4>Mechanic Details: {selectedMechanic.first_name} {selectedMechanic.last_name} <span className="detail-id">#{selectedMechanic.id}</span></h4>
+                        <button aria-label="Close mechanic details" onClick={() => setSelectedMechanic(null)} className="close-box">&times;</button>
+                      </div>
+                      <div className="detail-body">
+                        {editingMechanic && editingMechanic.id === selectedMechanic.id ? (
+                          // Inline edit form for mechanic
+                          <form className="inline-edit-form" onSubmit={(e) => { e.preventDefault(); updateMechanic(); }}>
+                            <div className="form-group">
+                              <label>First Name</label>
+                              <input type="text" value={mechanicEditForm.first_name} onChange={(e) => setMechanicEditForm({...mechanicEditForm, first_name: e.target.value})} required />
+                            </div>
+                            <div className="form-group">
+                              <label>Last Name</label>
+                              <input type="text" value={mechanicEditForm.last_name} onChange={(e) => setMechanicEditForm({...mechanicEditForm, last_name: e.target.value})} required />
+                            </div>
+                            <div className="form-group">
+                              <label>Email</label>
+                              <input type="email" value={mechanicEditForm.email} onChange={(e) => setMechanicEditForm({...mechanicEditForm, email: e.target.value})} required />
+                            </div>
+                            <div className="form-group">
+                              <label>Salary</label>
                               <input
-                                type="checkbox"
-                                checked={mechanicEditForm.is_admin}
-                                onChange={(e) => setMechanicEditForm({...mechanicEditForm, is_admin: e.target.checked})}
-                                style={{marginLeft:8}}
+                                type="number"
+                                step="0.01"
+                                value={mechanicEditForm.salary}
+                                onChange={(e) => {
+                                  const v = e.target.value
+                                  setMechanicEditForm({
+                                    ...mechanicEditForm,
+                                    salary: v === '' ? '' : parseFloat(v)
+                                  })
+                                }}
+                                required
                               />
-                            </label>
-                            <span className="admin-help">check this box to make mechanic an admin</span>
-                          </div>
+                            </div>
+                            <div className="form-group">
+                              <label>Address</label>
+                              <textarea value={mechanicEditForm.address} onChange={(e) => setMechanicEditForm({...mechanicEditForm, address: e.target.value})} rows="2" />
+                            </div>
+                            <div className="form-group">
+                              <div className="admin-checkbox-row">
+                                <label className="checkbox-label">
+                                  <span className="checkbox-text">Admin</span>
+                                  <input
+                                    type="checkbox"
+                                    checked={mechanicEditForm.is_admin}
+                                    onChange={(e) => setMechanicEditForm({...mechanicEditForm, is_admin: e.target.checked})}
+                                    style={{marginLeft:8}}
+                                  />
+                                </label>
+                                <span className="admin-help">check this box to make mechanic an admin</span>
+                              </div>
+                            </div>
+                            <div className="form-actions">
+                              <button type="submit" className="btn" disabled={mechanicEditLoading}>{mechanicEditLoading ? 'Saving...' : 'Save'}</button>
+                              <button type="button" className="btn cancel" onClick={() => setEditingMechanic(null)} disabled={mechanicEditLoading}>Cancel</button>
+                            </div>
+                          </form>
+                        ) : (
+                          <>
+                            <div className="detail-row"><div className="detail-label">Email</div><div className="detail-value">{selectedMechanic.email}</div></div>
+                            <div className="detail-row"><div className="detail-label">Salary</div><div className="detail-value">${selectedMechanic.salary}</div></div>
+                            <div className="detail-row"><div className="detail-label">Address</div><div className="detail-value">{selectedMechanic.address || 'N/A'}</div></div>
+                            <div className="detail-row"><div className="detail-label">Admin</div><div className="detail-value">{selectedMechanic.is_admin ? 'Yes' : 'No'}</div></div>
+                          </>
+                        )}
+                      </div>
+                      <div className="detail-actions">
+                        {!editingMechanic || editingMechanic.id !== selectedMechanic.id ? (
+                          <>
+                            <button onClick={() => startMechanicEdit(selectedMechanic)} className="btn">Edit</button>
+                            <button onClick={() => { if (confirm('Delete this mechanic?')) { deleteMechanic(selectedMechanic.id); setSelectedMechanic(null); } }} className="btn delete">Delete</button>
+                          </>
+                        ) : null}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Modal mechanic registration form (centered overlay) */}
+              {showMechanicRegister && (
+                <div className="modal-overlay" onClick={() => setShowMechanicRegister(false)}>
+                  <div className="modal" onClick={(e) => e.stopPropagation()}>
+                    <div className="detail-header" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                      <h4>Add Mechanic</h4>
+                      <button aria-label="Close" className="close-box" onClick={() => setShowMechanicRegister(false)}>&times;</button>
+                    </div>
+                    <form className="inline-edit-form" onSubmit={createMechanic}>
+                      {mechRegError && <div className="error-message">{mechRegError}</div>}
+                      <div className="form-group">
+                        <label>First Name</label>
+                        <input value={mechanicRegisterForm.first_name} onChange={(e) => setMechanicRegisterForm({...mechanicRegisterForm, first_name: e.target.value})} required />
+                      </div>
+                      <div className="form-group">
+                        <label>Last Name</label>
+                        <input value={mechanicRegisterForm.last_name} onChange={(e) => setMechanicRegisterForm({...mechanicRegisterForm, last_name: e.target.value})} required />
+                      </div>
+                      <div className="form-group">
+                        <label>Email</label>
+                        <input type="email" value={mechanicRegisterForm.email} onChange={(e) => setMechanicRegisterForm({...mechanicRegisterForm, email: e.target.value})} required />
+                      </div>
+                      <div className="form-group">
+                        <label>Password</label>
+                        <input type="password" value={mechanicRegisterForm.password} onChange={(e) => setMechanicRegisterForm({...mechanicRegisterForm, password: e.target.value})} required />
+                      </div>
+                      <div className="form-group">
+                        <label>Salary</label>
+                        <input type="number" step="0.01" value={mechanicRegisterForm.salary} onChange={(e) => setMechanicRegisterForm({...mechanicRegisterForm, salary: e.target.value})} />
+                      </div>
+                      <div className="form-group">
+                        <label>Address</label>
+                        <input value={mechanicRegisterForm.address} onChange={(e) => setMechanicRegisterForm({...mechanicRegisterForm, address: e.target.value})} />
+                      </div>
+                      <div className="form-group">
+                        <div className="admin-checkbox-row">
+                          <label className="checkbox-label">
+                            <span className="checkbox-text">Admin</span>
+                            <input
+                              type="checkbox"
+                              checked={mechanicRegisterForm.is_admin}
+                              onChange={(e) => setMechanicRegisterForm({...mechanicRegisterForm, is_admin: e.target.checked})}
+                              style={{marginLeft:8}}
+                            />
+                          </label>
+                          <span className="admin-help">check this box to make mechanic an admin</span>
                         </div>
-                        <div className="form-actions">
-                          <button type="submit" className="btn" disabled={mechanicEditLoading}>{mechanicEditLoading ? 'Saving...' : 'Save'}</button>
-                          <button type="button" className="btn cancel" onClick={() => setEditingMechanic(null)} disabled={mechanicEditLoading}>Cancel</button>
-                        </div>
-                      </form>
-                    ) : (
-                      <>
-                        <div className="detail-row"><div className="detail-label">Email</div><div className="detail-value">{selectedMechanic.email}</div></div>
-                        <div className="detail-row"><div className="detail-label">Salary</div><div className="detail-value">${selectedMechanic.salary}</div></div>
-                        <div className="detail-row"><div className="detail-label">Address</div><div className="detail-value">{selectedMechanic.address || 'N/A'}</div></div>
-                        <div className="detail-row"><div className="detail-label">Admin</div><div className="detail-value">{selectedMechanic.is_admin ? 'Yes' : 'No'}</div></div>
-                      </>
-                    )}
+                      </div>
+                      <div className="form-actions modal-actions">
+                        <button type="submit" className="btn" disabled={mechRegLoading}>{mechRegLoading ? 'Creating...' : 'Create Mechanic'}</button>
+                        <button type="button" className="btn cancel" onClick={() => setShowMechanicRegister(false)} disabled={mechRegLoading}>Cancel</button>
+                      </div>
+                    </form>
                   </div>
-                  <div className="detail-actions">
-                    {!editingMechanic || editingMechanic.id !== selectedMechanic.id ? (
-                      <>
-                        <button onClick={() => startMechanicEdit(selectedMechanic)} className="btn">Edit</button>
-                        <button onClick={() => { if (confirm('Delete this mechanic?')) { deleteMechanic(selectedMechanic.id); setSelectedMechanic(null); } }} className="btn delete">Delete</button>
-                      </>
-                    ) : null}
+                </div>
+              )}
+
+              {/* Modal customer registration form (centered overlay) */}
+              {showCustomerRegister && (
+                <div className="modal-overlay" onClick={() => setShowCustomerRegister(false)}>
+                  <div className="modal" onClick={(e) => e.stopPropagation()}>
+                    <div className="detail-header" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                      <h4>Add Customer</h4>
+                      <button aria-label="Close" className="close-box" onClick={() => setShowCustomerRegister(false)}>&times;</button>
+                    </div>
+                    <form className="inline-edit-form" onSubmit={createCustomer}>
+                      {custRegError && <div className="error-message">{custRegError}</div>}
+                      <div className="form-group">
+                        <label>First Name</label>
+                        <input value={customerRegisterForm.first_name} onChange={(e) => setCustomerRegisterForm({...customerRegisterForm, first_name: e.target.value})} required />
+                      </div>
+                      <div className="form-group">
+                        <label>Last Name</label>
+                        <input value={customerRegisterForm.last_name} onChange={(e) => setCustomerRegisterForm({...customerRegisterForm, last_name: e.target.value})} required />
+                      </div>
+                      <div className="form-group">
+                        <label>Email</label>
+                        <input type="email" value={customerRegisterForm.email} onChange={(e) => setCustomerRegisterForm({...customerRegisterForm, email: e.target.value})} required />
+                      </div>
+                      <div className="form-group">
+                        <label>Password</label>
+                        <input type="password" value={customerRegisterForm.password} onChange={(e) => setCustomerRegisterForm({...customerRegisterForm, password: e.target.value})} required />
+                      </div>
+                      <div className="form-group">
+                        <label>Phone</label>
+                        <input value={customerRegisterForm.phone} onChange={(e) => setCustomerRegisterForm({...customerRegisterForm, phone: e.target.value})} />
+                      </div>
+                      <div className="form-group">
+                        <label>Address</label>
+                        <input value={customerRegisterForm.address} onChange={(e) => setCustomerRegisterForm({...customerRegisterForm, address: e.target.value})} />
+                      </div>
+                      <div className="form-actions modal-actions">
+                        <button type="submit" className="btn" disabled={custRegLoading}>{custRegLoading ? 'Creating...' : 'Create Customer'}</button>
+                        <button type="button" className="btn cancel" onClick={() => setShowCustomerRegister(false)} disabled={custRegLoading}>Cancel</button>
+                      </div>
+                    </form>
                   </div>
                 </div>
               )}
             </div>
-          )}
-
-          {/* Modal mechanic registration form (centered overlay) */}
-          {showMechanicRegister && (
-            <div className="modal-overlay" onClick={() => setShowMechanicRegister(false)}>
-              <div className="modal" onClick={(e) => e.stopPropagation()}>
-                <div className="detail-header" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                  <h4>Add Mechanic</h4>
-                  <button aria-label="Close" className="close-box" onClick={() => setShowMechanicRegister(false)}>&times;</button>
-                </div>
-                <form className="inline-edit-form" onSubmit={createMechanic}>
-                  {mechRegError && <div className="error-message">{mechRegError}</div>}
-                  <div className="form-group">
-                    <label>First Name</label>
-                    <input value={mechanicRegisterForm.first_name} onChange={(e) => setMechanicRegisterForm({...mechanicRegisterForm, first_name: e.target.value})} required />
-                  </div>
-                  <div className="form-group">
-                    <label>Last Name</label>
-                    <input value={mechanicRegisterForm.last_name} onChange={(e) => setMechanicRegisterForm({...mechanicRegisterForm, last_name: e.target.value})} required />
-                  </div>
-                  <div className="form-group">
-                    <label>Email</label>
-                    <input type="email" value={mechanicRegisterForm.email} onChange={(e) => setMechanicRegisterForm({...mechanicRegisterForm, email: e.target.value})} required />
-                  </div>
-                  <div className="form-group">
-                    <label>Password</label>
-                    <input type="password" value={mechanicRegisterForm.password} onChange={(e) => setMechanicRegisterForm({...mechanicRegisterForm, password: e.target.value})} required />
-                  </div>
-                  <div className="form-group">
-                    <label>Salary</label>
-                    <input type="number" step="0.01" value={mechanicRegisterForm.salary} onChange={(e) => setMechanicRegisterForm({...mechanicRegisterForm, salary: e.target.value})} />
-                  </div>
-                  <div className="form-group">
-                    <label>Address</label>
-                    <input value={mechanicRegisterForm.address} onChange={(e) => setMechanicRegisterForm({...mechanicRegisterForm, address: e.target.value})} />
-                  </div>
-                  <div className="form-group">
-                    <div className="admin-checkbox-row">
-                      <label className="checkbox-label">
-                        <span className="checkbox-text">Admin</span>
-                        <input
-                          type="checkbox"
-                          checked={mechanicRegisterForm.is_admin}
-                          onChange={(e) => setMechanicRegisterForm({...mechanicRegisterForm, is_admin: e.target.checked})}
-                          style={{marginLeft:8}}
-                        />
-                      </label>
-                      <span className="admin-help">check this box to make mechanic an admin</span>
-                    </div>
-                  </div>
-                  <div className="form-actions modal-actions">
-                    <button type="submit" className="btn" disabled={mechRegLoading}>{mechRegLoading ? 'Creating...' : 'Create Mechanic'}</button>
-                    <button type="button" className="btn cancel" onClick={() => setShowMechanicRegister(false)} disabled={mechRegLoading}>Cancel</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {/* Modal customer registration form (centered overlay) */}
-          {showCustomerRegister && (
-            <div className="modal-overlay" onClick={() => setShowCustomerRegister(false)}>
-              <div className="modal" onClick={(e) => e.stopPropagation()}>
-                <div className="detail-header" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                  <h4>Add Customer</h4>
-                  <button aria-label="Close" className="close-box" onClick={() => setShowCustomerRegister(false)}>&times;</button>
-                </div>
-                <form className="inline-edit-form" onSubmit={createCustomer}>
-                  {custRegError && <div className="error-message">{custRegError}</div>}
-                  <div className="form-group">
-                    <label>First Name</label>
-                    <input value={customerRegisterForm.first_name} onChange={(e) => setCustomerRegisterForm({...customerRegisterForm, first_name: e.target.value})} required />
-                  </div>
-                  <div className="form-group">
-                    <label>Last Name</label>
-                    <input value={customerRegisterForm.last_name} onChange={(e) => setCustomerRegisterForm({...customerRegisterForm, last_name: e.target.value})} required />
-                  </div>
-                  <div className="form-group">
-                    <label>Email</label>
-                    <input type="email" value={customerRegisterForm.email} onChange={(e) => setCustomerRegisterForm({...customerRegisterForm, email: e.target.value})} required />
-                  </div>
-                  <div className="form-group">
-                    <label>Password</label>
-                    <input type="password" value={customerRegisterForm.password} onChange={(e) => setCustomerRegisterForm({...customerRegisterForm, password: e.target.value})} required />
-                  </div>
-                  <div className="form-group">
-                    <label>Phone</label>
-                    <input value={customerRegisterForm.phone} onChange={(e) => setCustomerRegisterForm({...customerRegisterForm, phone: e.target.value})} />
-                  </div>
-                  <div className="form-group">
-                    <label>Address</label>
-                    <input value={customerRegisterForm.address} onChange={(e) => setCustomerRegisterForm({...customerRegisterForm, address: e.target.value})} />
-                  </div>
-                  <div className="form-actions modal-actions">
-                    <button type="submit" className="btn" disabled={custRegLoading}>{custRegLoading ? 'Creating...' : 'Create Customer'}</button>
-                    <button type="button" className="btn cancel" onClick={() => setShowCustomerRegister(false)} disabled={custRegLoading}>Cancel</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+          </div>
+        </>
+      )}
 
       {errorMessage && (
         <div className="error">
